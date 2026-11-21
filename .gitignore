@@ -1,0 +1,16 @@
+# Instance database folder and SQLite files
+instance/
+*.db
+*.db-wal
+*.db-shm
+
+# Python bytecode and environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Large model artifacts and PyTorch files
+*.pth
+*.bin

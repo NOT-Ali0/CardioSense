@@ -1,0 +1,16 @@
+services:
+  web:
+    build: .
+    ports:
+      - "10000:10000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite:////app/instance/cardiosense.db
+      - FLASK_APP=app.py
+    volumes:
+      - cardiosense_data:/app/instance
+    restart: unless-stopped
+
+volumes:
+  cardiosense_data:
