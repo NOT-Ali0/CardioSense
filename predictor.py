@@ -7,13 +7,27 @@ import torch.nn.functional as F
 from preprocessing import preprocess_signal
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# قراءة الأوزان من نفس المجلد
+# قراءة الأوزان والإعدادات من نفس المجلد
 MODEL_PATH = os.path.join(BASE_DIR, "stanford_ecg_model.pth")
+CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 
-# قيم العتبات السريرية التي نتجت عن تدريب نموذجك
-TEMP = 1.4723
-CONF_TH = 0.95
-ENT_TH = 0.400
+
+def _load_thresholds():
+    temp, conf_th, ent_th = 1.4723, 0.95, 0.400
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+            temp = float(cfg.get("temperature", temp))
+            conf_th = float(cfg.get("confidence_threshold", conf_th))
+            ent_th = float(cfg.get("entropy_threshold", ent_th))
+        except Exception as exc:
+            print(f"⚠️ Failed to load thresholds from {CONFIG_PATH}: {exc}")
+    return temp, conf_th, ent_th
+
+
+# قيم العتبات السريرية التي نتجت عن تدريب نموذجك (تُقرأ من config.json)1 ,
+TEMP, CONF_TH, ENT_TH = _load_thresholds()
 
 def entropy(prob):
     """

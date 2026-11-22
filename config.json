@@ -4,14 +4,15 @@
     "architecture": "SE-ResNet1D",
     "dataset": "CinC2017 + Real-time Validation",
     "task": "Atrial Fibrillation Detection",
-
     "sampling_rate": 300,
     "input_length": 3000,
-
     "temperature": 1.4723,
-    "confidence_threshold": 0.95 ,
+    "confidence_threshold": 1,
     "entropy_threshold": 0.40,
-
-    "classes": ["NORMAL", "AFIB", "UNCERTAIN"],
+    "classes": [
+        "NORMAL",
+        "AFIB",
+        "UNCERTAIN"
+    ],
     "deployment_mode": "SAFE_CLINICAL_GATEKEEPER"
 }

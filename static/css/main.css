@@ -51,6 +51,14 @@
 *, *::before, *::after {
     font-family: var(--font-data);
     box-sizing: border-box;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 body {
