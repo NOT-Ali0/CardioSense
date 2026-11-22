@@ -9,7 +9,7 @@
  */
 import { apiFetch, escapeHtml, formatDateTime, showToast } from "./api.js";
 import { t, getLang } from "./i18n.js";
-import { openWaveformModal } from "./waveform.js";
+import { openWaveformModal, buildEcgChartConfig } from "./waveform.js";
 
 let _docChart = null;
 let _sparklineCharts = [];
@@ -29,72 +29,29 @@ export function stopDoctorPolling() {
     }
 }
 
+function _destroyDoctorChart() {
+    if (_docChart) {
+        _docChart.destroy();
+        _docChart = null;
+    }
+}
+
 export function initDoctorChart() {
     const canvas = document.getElementById("doctorEcgChart");
     if (!canvas || _docChart) return;
-    _docChart = new Chart(canvas.getContext("2d"), {
-        type: "line",
-        data: {
-            labels: Array.from({ length: 3000 }, (_, i) => i),
-            datasets: [
-                {
-                    label: t("legendEcg"),
-                    data: [],
-                    yAxisID: "y",
-                    borderColor: "#06b6d4",
-                    borderWidth: 1.5,
-                    pointRadius: 0,
-                    tension: 0.0,
-                    borderJoinStyle: "miter",
-                    fill: false,
-                    order: 1,
-                },
-                {
-                    label: t("legendAttention"),
-                    data: [],
-                    yAxisID: "yAtt",
-                    borderColor: "rgba(239, 68, 68, 0.55)",
-                    backgroundColor: "rgba(239, 68, 68, 0.22)",
-                    borderWidth: 1,
-                    pointRadius: 0,
-                    tension: 0.15,
-                    fill: true,
-                    order: 2,
-                },
-            ],
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
-            plugins: {
-                legend: { display: false },
-                zoom: {
-                    pan: { enabled: true, mode: "x" },
-                    zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" },
-                },
-            },
-            scales: {
-                x: {
-                    grid: { color: "rgba(255,255,255,0.08)" },
-                    ticks: {
-                        color: "rgba(150,150,150,0.7)",
-                        maxTicksLimit: 11,
-                        callback: (value) => (value / 300).toFixed(1) + "s",
-                    },
-                },
-                y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { display: false } },
-                yAtt: {
-                    position: "right",
-                    min: 0,
-                    max: 1,
-                    display: false,
-                    grid: { drawOnChartArea: false },
-                },
-            },
-        },
-    });
+    const isLight = document.body.classList.contains("light-theme");
+    _docChart = new Chart(
+        canvas.getContext("2d"),
+        buildEcgChartConfig({
+            samples: [],
+            attention: null,
+            durationS: 10,
+            isClinical: true,
+            isLight,
+            showYAxisTitle: false,
+            showYAxisTicks: true,
+        })
+    );
 }
 
 export function resetDoctorChartZoom() {
@@ -170,8 +127,8 @@ export async function fetchDoctorCases() {
                     c.priority === "URGENT"
                         ? "badge-urgent"
                         : c.priority === "HIGH"
-                        ? "badge-high"
-                        : "badge-normal";
+                            ? "badge-high"
+                            : "badge-normal";
                 const predClass = c.raw_prediction === "AFIB" ? "badge-danger" : "badge-success";
                 const selectedClass = c.id === _selectedCaseId ? "selected" : "";
                 return `<div class="case-item ${selectedClass}" data-case-id="${escapeHtml(c.id)}">
@@ -181,17 +138,16 @@ export async function fetchDoctorCases() {
                     </div>
                     <div class="case-item-meta">
                         <span class="badge ${predClass}">${escapeHtml(c.raw_prediction)} (${(
-                    c.confidence * 100
-                ).toFixed(0)}%)</span>
+                        c.confidence * 100
+                    ).toFixed(0)}%)</span>
                         <span>${escapeHtml(c.bpm)} BPM</span>
                         <span>${escapeHtml(formatDateTime(c.created_at))}</span>
                     </div>
-                    ${
-                        c.complaint
-                            ? `<div style="font-size:11px; color:var(--white-muted); margin-top:6px;">${escapeHtml(
-                                  c.complaint
-                              )}</div>`
-                            : ""
+                    ${c.complaint
+                        ? `<div style="font-size:11px; color:var(--white-muted); margin-top:6px;">${escapeHtml(
+                            c.complaint
+                        )}</div>`
+                        : ""
                     }
                 </div>`;
             })
@@ -274,18 +230,18 @@ function renderCaseDetail(c, isArchive) {
             : t("noData")
     )}</span></div>
         <div style="margin-top:10px; font-size:12px; color:var(--white-muted);">${escapeHtml(
-            t("lblClinicalNotes")
-        )}:</div>
+        t("lblClinicalNotes")
+    )}:</div>
         <div style="font-size:13px; margin-top:4px; margin-bottom:12px;">${escapeHtml(
-            prof.clinical_notes || t("noData")
-        )}</div>
+        prof.clinical_notes || t("noData")
+    )}</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn btn-secondary btn-sm" id="btnSideEditClinical">${escapeHtml(
-                t("btnEditClinical")
-            )}</button>
+        t("btnEditClinical")
+    )}</button>
             <button class="btn btn-secondary btn-sm" id="btnSideViewHistory">${escapeHtml(
-                t("btnViewHistory")
-            )}</button>
+        t("btnViewHistory")
+    )}</button>
         </div>
     `;
     document.getElementById("btnSideEditClinical").onclick = () => openEditClinicalModal(c.patient_id);
@@ -301,24 +257,27 @@ function renderCaseDetail(c, isArchive) {
         document.getElementById(id).disabled = disabled;
     });
 
-    // ECG Waveform + semi-transparent AI Attention overlay
-    const legendEl = document.getElementById("docCaseLegend");
-    if (_docChart) {
+    // ECG Waveform + AI Attention scatter dots (destroy previous instance before creating new one)
+    const canvas = document.getElementById("doctorEcgChart");
+    if (canvas) {
         const sig = Array.isArray(c.signal) ? c.signal : [];
         const sr = c.sample_rate_hz || 300;
-        _docChart.data.labels = Array.from({ length: sig.length }, (_, i) => i);
-        _docChart.options.scales.x.ticks.callback = (value) => (value / sr).toFixed(1) + "s";
-        _docChart.data.datasets[0].data = sig;
+        const durationS = sig.length > 0 ? sig.length / sr : 10;
+        const isLight = document.body.classList.contains("light-theme");
 
-        const hasAtt = Array.isArray(c.xai_weights) && c.xai_weights.length === sig.length && sig.length > 0;
-        if (_docChart.data.datasets[1]) {
-            _docChart.data.datasets[1].data = hasAtt ? c.xai_weights : [];
-        }
-        if (legendEl) {
-            legendEl.style.display = hasAtt ? "flex" : "none";
-        }
-        resetDoctorChartZoom();
-        _docChart.update();
+        _destroyDoctorChart();
+        _docChart = new Chart(
+            canvas.getContext("2d"),
+            buildEcgChartConfig({
+                samples: sig,
+                attention: Array.isArray(c.xai_weights) ? c.xai_weights : null,
+                durationS,
+                isClinical: true,
+                isLight,
+                showYAxisTitle: false,
+                showYAxisTicks: true,
+            })
+        );
     }
 }
 
@@ -339,13 +298,8 @@ export async function submitDoctorDecision(decisionValue) {
         ["btnActionNoisy", "btnActionHealthy", "btnActionInfected"].forEach((id) => {
             document.getElementById(id).disabled = true;
         });
-        if (_docChart) {
-            _docChart.data.datasets[0].data = [];
-            if (_docChart.data.datasets[1]) _docChart.data.datasets[1].data = [];
-            _docChart.update();
-        }
-        const legendEl = document.getElementById("docCaseLegend");
-        if (legendEl) legendEl.style.display = "none";
+        _destroyDoctorChart();
+        initDoctorChart();
         await Promise.all([fetchDoctorKpis(), fetchDoctorCases(), fetchDoctorPatients()]);
     } catch (err) {
         showToast(err.message, "error");
@@ -374,13 +328,12 @@ export async function fetchDoctorPatients() {
             .map((p) => {
                 const genderLabel = p.gender === "M" ? t("optMale") : t("optFemale");
                 const statusBadge = p.last_prediction
-                    ? `<span class="badge ${
-                          p.last_prediction.includes("AFIB") || p.last_status === "ESCALATED"
-                              ? "badge-danger"
-                              : p.last_status === "REJECTED"
-                              ? "badge-warn"
-                              : "badge-success"
-                      }">${escapeHtml(p.last_prediction)}</span>`
+                    ? `<span class="badge ${p.last_prediction.includes("AFIB") || p.last_status === "ESCALATED"
+                        ? "badge-danger"
+                        : p.last_status === "REJECTED"
+                            ? "badge-warn"
+                            : "badge-success"
+                    }">${escapeHtml(p.last_prediction)}</span>`
                     : `<span class="badge badge-muted">${escapeHtml(t("noData"))}</span>`;
                 return `<tr>
                     <td><strong>${escapeHtml(p.full_name)}</strong><div style="font-size:11px; color:var(--white-muted);">@${escapeHtml(
@@ -388,11 +341,10 @@ export async function fetchDoctorPatients() {
                 )}</div></td>
                     <td>${escapeHtml(p.age)} / ${escapeHtml(genderLabel)}</td>
                     <td>${escapeHtml(formatDateTime(p.last_test_at))}</td>
-                    <td>${statusBadge}${
-                    p.pending_cases_count > 0
+                    <td>${statusBadge}${p.pending_cases_count > 0
                         ? ` <span class="badge badge-urgent">${p.pending_cases_count}</span>`
                         : ""
-                }</td>
+                    }</td>
                     <td>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <strong>${escapeHtml(p.last_bpm ?? "--")}</strong>
@@ -402,11 +354,11 @@ export async function fetchDoctorPatients() {
                     <td>
                         <div style="display:flex; gap:6px; flex-wrap:wrap;">
                             <button class="btn btn-secondary btn-sm btn-edit-pat" data-id="${p.id}">${escapeHtml(
-                    t("btnEditClinical")
-                )}</button>
+                        t("btnEditClinical")
+                    )}</button>
                             <button class="btn btn-secondary btn-sm btn-hist-pat" data-id="${p.id}" data-name="${escapeHtml(
-                    p.full_name
-                )}">${escapeHtml(t("btnViewHistory"))}</button>
+                        p.full_name
+                    )}">${escapeHtml(t("btnViewHistory"))}</button>
                         </div>
                     </td>
                 </tr>`;
@@ -565,18 +517,18 @@ export async function openPatientHistoryModal(patientId, patientName) {
                 .map((r, idx) => {
                     const wfAction = r.has_waveform
                         ? `<button class="btn btn-secondary btn-sm btn-doc-view-ecg" data-idx="${idx}">${escapeHtml(
-                              t("btnViewEcg")
-                          )}</button>`
+                            t("btnViewEcg")
+                        )}</button>`
                         : `<span style="font-size:11px; color:var(--white-muted);">${escapeHtml(
-                              t("noWaveformStored")
-                          )}</span>`;
+                            t("noWaveformStored")
+                        )}</span>`;
                     return `<div class="message-item">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
                         <div>
                             <div style="font-size:11px; color:var(--white-muted);">${escapeHtml(formatDateTime(r.ts))}</div>
                             <div><strong>${escapeHtml(r.status)}</strong> • ${escapeHtml(r.prediction)} • ${escapeHtml(
-                                r.bpm
-                            )} BPM (${escapeHtml(r.rate_status)})</div>
+                        r.bpm
+                    )} BPM (${escapeHtml(r.rate_status)})</div>
                         </div>
                         <div>${wfAction}</div>
                     </div>

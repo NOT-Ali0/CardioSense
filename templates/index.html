@@ -367,18 +367,7 @@
                         </div>
 
                         <div class="doc-chart-wrapper">
-                            <div class="ecg-baseline"></div>
                             <canvas id="doctorEcgChart" style="position:relative; z-index:1;"></canvas>
-                        </div>
-
-                        <div id="docCaseLegend" class="waveform-legend"
-                            style="display:none; margin-top:-8px; margin-bottom:14px;">
-                            <span class="waveform-legend-item"><span
-                                    class="waveform-swatch waveform-swatch-ecg"></span><span data-i18n="legendEcg">إشارة
-                                    ECG</span></span>
-                            <span class="waveform-legend-item"><span
-                                    class="waveform-swatch waveform-swatch-att"></span><span
-                                    data-i18n="legendAttention">تركيز الذكاء الاصطناعي (AI Attention)</span></span>
                         </div>
 
                         <div id="docAttentionNoteSection"
@@ -542,8 +531,10 @@
                     <div class="hardware-module admin-analytics-card" style="margin-bottom:0;">
                         <div class="module-header">
                             <div>
-                                <span class="module-title" data-i18n="lblInferenceDist">توزيع نتائج الذكاء الاصطناعي</span>
-                                <div class="module-subtitle" data-i18n="lblInferenceDistSub">ملخص شامل لجميع الفحوصات السريرية المسجلة</div>
+                                <span class="module-title" data-i18n="lblInferenceDist">توزيع نتائج الذكاء
+                                    الاصطناعي</span>
+                                <div class="module-subtitle" data-i18n="lblInferenceDistSub">ملخص شامل لجميع الفحوصات
+                                    السريرية المسجلة</div>
                             </div>
                         </div>
                         <div class="admin-donut-layout">
@@ -574,22 +565,28 @@
                                     <strong id="ops_active_patients" class="ops-value">0</strong>
                                 </div>
                                 <div class="admin-ops-tile ops-tile-warn">
-                                    <span class="ops-label" data-i18n="lblPendingEscalations">حالات بانتظار المراجعة</span>
-                                    <strong id="ops_pending_cases" class="ops-value" style="color:var(--medical-yellow);">0</strong>
+                                    <span class="ops-label" data-i18n="lblPendingEscalations">حالات بانتظار
+                                        المراجعة</span>
+                                    <strong id="ops_pending_cases" class="ops-value"
+                                        style="color:var(--medical-yellow);">0</strong>
                                 </div>
                             </div>
                         </div>
 
                         <div class="hardware-module admin-dataset-card" style="margin-bottom:0;">
-                            <div class="module-header" style="border-bottom-color:color-mix(in srgb, var(--scai-accent) 28%, transparent);">
-                                <span class="module-title" data-i18n="lblActiveLearning">مجموعة بيانات التعلم النشط (ML)</span>
+                            <div class="module-header"
+                                style="border-bottom-color:color-mix(in srgb, var(--scai-accent) 28%, transparent);">
+                                <span class="module-title" data-i18n="lblActiveLearning">مجموعة بيانات التعلم النشط
+                                    (ML)</span>
                                 <span class="badge badge-info" id="stat_dataset_badge">0</span>
                             </div>
                             <p class="admin-dataset-desc" data-i18n="lblActiveLearningDesc">
-                                تسجيلات ECG مجهّلة الهوية (3000 عينة) وموثّقة بقرارات الأطباء الاستشاريين، جاهزة لإعادة تدريب النموذج.
+                                تسجيلات ECG مجهّلة الهوية (3000 عينة) وموثّقة بقرارات الأطباء الاستشاريين، جاهزة لإعادة
+                                تدريب النموذج.
                             </p>
                             <div class="admin-dataset-footer">
-                                <button class="btn btn-filled" id="btnExportDatasetCard" style="width:100%;" data-i18n="btnExportClinicalCsv">تصدير مجموعة البيانات (CSV)</button>
+                                <button class="btn btn-filled" id="btnExportDatasetCard" style="width:100%;"
+                                    data-i18n="btnExportClinicalCsv">تصدير مجموعة البيانات (CSV)</button>
                             </div>
                         </div>
                     </div>
@@ -614,7 +611,8 @@
                 </div>
 
                 <div class="admin-toolbar">
-                    <input type="text" id="adminUserSearch" class="form-control" data-i18n-placeholder="searchUsersPlaceholder" placeholder="بحث بالاسم أو اسم المستخدم...">
+                    <input type="text" id="adminUserSearch" class="form-control"
+                        data-i18n-placeholder="searchUsersPlaceholder" placeholder="بحث بالاسم أو اسم المستخدم...">
                     <select id="adminUserStatusFilter" class="form-control">
                         <option value="all" data-i18n="filterAllStatuses">كل الحالات</option>
                         <option value="active" data-i18n="activeBadge">نشط</option>
@@ -909,14 +907,7 @@
                 جاري تحميل إشارة تخطيط القلب...</div>
             <div id="waveformModalError" class="waveform-state-box waveform-state-error" style="display:none;"></div>
             <div id="waveformModalChartBox" class="doc-chart-wrapper" style="display:none; height:340px;">
-                <div class="ecg-baseline"></div>
                 <canvas id="waveformModalCanvas" style="position:relative; z-index:1;"></canvas>
-            </div>
-            <div id="waveformModalLegend" class="waveform-legend" style="display:none;">
-                <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-ecg"></span><span
-                        data-i18n="legendEcg">إشارة ECG</span></span>
-                <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-att"></span><span
-                        data-i18n="legendAttention">تركيز الذكاء الاصطناعي (AI Attention)</span></span>
             </div>
         </div>
     </div>
