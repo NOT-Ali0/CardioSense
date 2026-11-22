@@ -3,8 +3,9 @@ models.py - SQLAlchemy 2.0 ORM entity models for CardioSense (v2 FK-normalized s
 """
 import json
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 
+import numpy as np
 from sqlalchemy import (
     String,
     Integer,
@@ -12,6 +13,7 @@ from sqlalchemy import (
     Text,
     Boolean,
     DateTime,
+    LargeBinary,
     ForeignKey,
     CheckConstraint,
     Index,
@@ -19,6 +21,65 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db import db
+
+
+def encode_float32_le(values: Any) -> bytes:
+    """Encode a 1D numeric sequence into little-endian float32 bytes."""
+    return np.asarray(values, dtype="<f4").tobytes()
+
+
+def decode_float32_le(blob: Optional[bytes]) -> np.ndarray:
+    """Decode little-endian float32 bytes into a 1D numpy float32 array."""
+    if not blob:
+        return np.empty(0, dtype=np.float32)
+    return np.frombuffer(blob, dtype="<f4")
+
+
+def decimate_minmax(
+    samples: np.ndarray,
+    max_points: int,
+    attention: Optional[np.ndarray] = None,
+) -> Tuple[List[float], Optional[List[float]]]:
+    """
+    Min/max peak-preserving decimation returning at most `max_points` samples.
+    Preserves exact global min/max and local peaks; keeps `attention` aligned 1-to-1.
+    """
+    n = len(samples)
+    if n == 0:
+        return [], ([] if attention is not None else None)
+    if max_points >= n:
+        att_list = attention.tolist() if attention is not None else None
+        return samples.tolist(), att_list
+    if max_points == 1:
+        idx = int(np.argmax(samples))
+        att_list = [float(attention[idx])] if attention is not None else None
+        return [float(samples[idx])], att_list
+
+    n_buckets = max_points // 2
+    edges = np.linspace(0, n, n_buckets + 1, dtype=np.int64)
+    out_indices: List[int] = []
+    for b in range(n_buckets):
+        start = int(edges[b])
+        end = int(edges[b + 1])
+        if start >= end:
+            continue
+        segment = samples[start:end]
+        if end - start == 1:
+            out_indices.append(start)
+        else:
+            rel_min = int(np.argmin(segment))
+            rel_max = int(np.argmax(segment))
+            if rel_min <= rel_max:
+                out_indices.append(start + rel_min)
+                out_indices.append(start + rel_max)
+            else:
+                out_indices.append(start + rel_max)
+                out_indices.append(start + rel_min)
+
+    idx_arr = np.asarray(out_indices, dtype=np.int64)
+    dec_samples = samples[idx_arr].tolist()
+    dec_attention = attention[idx_arr].tolist() if attention is not None else None
+    return dec_samples, dec_attention
 
 
 def utcnow() -> datetime:
@@ -197,10 +258,15 @@ class Case(db.Model):
     doctor: Mapped["User"] = relationship("User", foreign_keys=[doctor_id])
     reviewed_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[reviewed_by_id])
 
-    def to_summary_dict(self) -> Dict[str, Any]:
+    def to_summary_dict(self, has_waveform: Optional[bool] = None) -> Dict[str, Any]:
         patient_display = self.patient.full_name if self.patient else f"Patient #{self.patient_id}"
         patient_username = self.patient.username if self.patient else ""
         note_text = self.ai_attention_note or ""
+        if has_waveform is None:
+            legacy_sig = _safe_json_loads(self.signal, [])
+            has_wf = bool(legacy_sig)
+        else:
+            has_wf = bool(has_waveform)
         return {
             "id": self.id,
             "patient_id": self.patient_id,
@@ -225,12 +291,31 @@ class Case(db.Model):
             "doctor_note": self.doctor_note,
             "has_attention_note": bool(note_text),
             "ai_attention_note_pending": "جاري" in note_text,
+            "has_waveform": has_wf,
         }
 
-    def to_detail_dict(self, profile: Optional["PatientProfile"] = None) -> Dict[str, Any]:
-        d = self.to_summary_dict()
-        d["signal"] = _safe_json_loads(self.signal, [])
-        d["xai_weights"] = _safe_json_loads(self.xai_weights, [])
+    def to_detail_dict(
+        self,
+        profile: Optional["PatientProfile"] = None,
+        recording: Optional["EcgRecording"] = None,
+    ) -> Dict[str, Any]:
+        if recording is not None:
+            sig_list = decode_float32_le(recording.signal).tolist()
+            att_list = (
+                decode_float32_le(recording.attention).tolist()
+                if recording.attention is not None
+                else []
+            )
+            has_wf = len(sig_list) > 0
+        else:
+            sig_list = _safe_json_loads(self.signal, [])
+            att_list = _safe_json_loads(self.xai_weights, [])
+            has_wf = len(sig_list) > 0
+
+        d = self.to_summary_dict(has_waveform=has_wf)
+        d["signal"] = sig_list
+        d["xai_weights"] = att_list
+        d["sample_rate_hz"] = recording.sample_rate_hz if recording is not None else 300
         d["symptoms"] = _safe_json_loads(self.symptoms, [])
         d["history"] = _safe_json_loads(self.history, [])
         d["ai_attention_note"] = self.ai_attention_note or ""
@@ -264,8 +349,16 @@ class PatientHistory(db.Model):
     ai_attention_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     doctor_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    def to_dict(self) -> Dict[str, Any]:
+    recording: Mapped[Optional["EcgRecording"]] = relationship(
+        "EcgRecording",
+        back_populates="history",
+        uselist=False,
+        passive_deletes=True,
+    )
+
+    def to_dict(self, has_waveform: Optional[bool] = None) -> Dict[str, Any]:
         ts = iso_utc(self.created_at)
+        has_wf = bool(has_waveform) if has_waveform is not None else (self.recording is not None)
         d: Dict[str, Any] = {
             "id": self.id,
             "ts": ts,
@@ -277,6 +370,7 @@ class PatientHistory(db.Model):
             "prediction": self.prediction,
             "bpm": self.bpm,
             "rate_status": self.rate_status,
+            "has_waveform": has_wf,
         }
         if self.confidence is not None:
             d["confidence"] = self.confidence
@@ -287,6 +381,36 @@ class PatientHistory(db.Model):
         if self.doctor_note is not None:
             d["doctor_note"] = self.doctor_note
         return d
+
+
+class EcgRecording(db.Model):
+    """Binary-packed float32 ECG waveform and optional AI attention weights per history entry."""
+
+    __tablename__ = "ecg_recordings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    history_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("patient_history.id", ondelete="CASCADE"), unique=True, nullable=False
+    )
+    case_id: Mapped[Optional[str]] = mapped_column(String(36), index=True, nullable=True)
+    patient_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    sample_rate_hz: Mapped[int] = mapped_column(Integer, default=300, nullable=False)
+    n_samples: Mapped[int] = mapped_column(Integer, nullable=False)
+    signal: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    attention: Mapped[Optional[bytes]] = mapped_column(LargeBinary, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True, nullable=False)
+
+    history: Mapped["PatientHistory"] = relationship("PatientHistory", back_populates="recording")
+
+    def get_signal_array(self) -> np.ndarray:
+        return decode_float32_le(self.signal)
+
+    def get_attention_array(self) -> Optional[np.ndarray]:
+        if self.attention is None:
+            return None
+        return decode_float32_le(self.attention)
 
 
 class PatientDecision(db.Model):
@@ -324,21 +448,34 @@ class MLDatasetRecord(db.Model):
     case_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("cases.id", ondelete="SET NULL"), index=True, nullable=True
     )
+    recording_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("ecg_recordings.id", ondelete="SET NULL"), index=True, nullable=True
+    )
     age: Mapped[str] = mapped_column(String(20), default="--", nullable=False)
     gender: Mapped[str] = mapped_column(String(10), default="U", nullable=False)
     ai_prediction: Mapped[str] = mapped_column(String(20), nullable=False)
     doctor_label: Mapped[str] = mapped_column(String(50), nullable=False)
-    signal: Mapped[str] = mapped_column(Text, nullable=False)
+    signal: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
+
+    recording: Mapped[Optional["EcgRecording"]] = relationship(
+        "EcgRecording", foreign_keys=[recording_id]
+    )
+
+    def get_signal_list(self) -> List[float]:
+        if self.recording is not None:
+            return decode_float32_le(self.recording.signal).tolist()
+        return _safe_json_loads(self.signal, [])
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.case_id,
+            "recording_id": self.recording_id,
             "age": self.age,
             "gender": self.gender,
             "ai_prediction": self.ai_prediction,
             "doctor_label": self.doctor_label,
-            "signal": _safe_json_loads(self.signal, []),
+            "signal": self.get_signal_list(),
         }
 
 

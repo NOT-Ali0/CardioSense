@@ -9,6 +9,7 @@
  */
 import { apiFetch, escapeHtml, formatDateTime, showToast } from "./api.js";
 import { t, getLang } from "./i18n.js";
+import { openWaveformModal } from "./waveform.js";
 
 let _docChart = null;
 let _sparklineCharts = [];
@@ -37,13 +38,28 @@ export function initDoctorChart() {
             labels: Array.from({ length: 3000 }, (_, i) => i),
             datasets: [
                 {
+                    label: t("legendEcg"),
                     data: [],
+                    yAxisID: "y",
                     borderColor: "#06b6d4",
                     borderWidth: 1.5,
                     pointRadius: 0,
                     tension: 0.0,
                     borderJoinStyle: "miter",
                     fill: false,
+                    order: 1,
+                },
+                {
+                    label: t("legendAttention"),
+                    data: [],
+                    yAxisID: "yAtt",
+                    borderColor: "rgba(239, 68, 68, 0.55)",
+                    backgroundColor: "rgba(239, 68, 68, 0.22)",
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    tension: 0.15,
+                    fill: true,
+                    order: 2,
                 },
             ],
         },
@@ -69,6 +85,13 @@ export function initDoctorChart() {
                     },
                 },
                 y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { display: false } },
+                yAtt: {
+                    position: "right",
+                    min: 0,
+                    max: 1,
+                    display: false,
+                    grid: { drawOnChartArea: false },
+                },
             },
         },
     });
@@ -278,20 +301,21 @@ function renderCaseDetail(c, isArchive) {
         document.getElementById(id).disabled = disabled;
     });
 
-    // ECG Waveform + XAI overlay
-    if (_docChart && Array.isArray(c.signal)) {
-        _docChart.data.labels = Array.from({ length: c.signal.length }, (_, i) => i);
-        _docChart.data.datasets[0].data = c.signal;
-        if (Array.isArray(c.xai_weights) && c.xai_weights.length === c.signal.length) {
-            _docChart.data.datasets[0].pointBackgroundColor = c.xai_weights.map((w) =>
-                w > 0.6 ? "#ef4444" : "transparent"
-            );
-            _docChart.data.datasets[0].pointBorderColor = c.xai_weights.map((w) =>
-                w > 0.6 ? "#ef4444" : "transparent"
-            );
-            _docChart.data.datasets[0].pointRadius = c.xai_weights.map((w) => (w > 0.6 ? 2 : 0));
-        } else {
-            _docChart.data.datasets[0].pointRadius = 0;
+    // ECG Waveform + semi-transparent AI Attention overlay
+    const legendEl = document.getElementById("docCaseLegend");
+    if (_docChart) {
+        const sig = Array.isArray(c.signal) ? c.signal : [];
+        const sr = c.sample_rate_hz || 300;
+        _docChart.data.labels = Array.from({ length: sig.length }, (_, i) => i);
+        _docChart.options.scales.x.ticks.callback = (value) => (value / sr).toFixed(1) + "s";
+        _docChart.data.datasets[0].data = sig;
+
+        const hasAtt = Array.isArray(c.xai_weights) && c.xai_weights.length === sig.length && sig.length > 0;
+        if (_docChart.data.datasets[1]) {
+            _docChart.data.datasets[1].data = hasAtt ? c.xai_weights : [];
+        }
+        if (legendEl) {
+            legendEl.style.display = hasAtt ? "flex" : "none";
         }
         resetDoctorChartZoom();
         _docChart.update();
@@ -317,8 +341,11 @@ export async function submitDoctorDecision(decisionValue) {
         });
         if (_docChart) {
             _docChart.data.datasets[0].data = [];
+            if (_docChart.data.datasets[1]) _docChart.data.datasets[1].data = [];
             _docChart.update();
         }
+        const legendEl = document.getElementById("docCaseLegend");
+        if (legendEl) legendEl.style.display = "none";
         await Promise.all([fetchDoctorKpis(), fetchDoctorCases(), fetchDoctorPatients()]);
     } catch (err) {
         showToast(err.message, "error");
@@ -535,16 +562,35 @@ export async function openPatientHistoryModal(patientId, patientName) {
             body.innerHTML = `<p style="color:var(--white-muted);">${escapeHtml(t("noData"))}</p>`;
         } else {
             body.innerHTML = rows
-                .map(
-                    (r) => `<div class="message-item">
-                    <div style="font-size:11px; color:var(--white-muted);">${escapeHtml(formatDateTime(r.ts))}</div>
-                    <div><strong>${escapeHtml(r.status)}</strong> • ${escapeHtml(r.prediction)} • ${escapeHtml(
-                        r.bpm
-                    )} BPM (${escapeHtml(r.rate_status)})</div>
+                .map((r, idx) => {
+                    const wfAction = r.has_waveform
+                        ? `<button class="btn btn-secondary btn-sm btn-doc-view-ecg" data-idx="${idx}">${escapeHtml(
+                              t("btnViewEcg")
+                          )}</button>`
+                        : `<span style="font-size:11px; color:var(--white-muted);">${escapeHtml(
+                              t("noWaveformStored")
+                          )}</span>`;
+                    return `<div class="message-item">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:11px; color:var(--white-muted);">${escapeHtml(formatDateTime(r.ts))}</div>
+                            <div><strong>${escapeHtml(r.status)}</strong> • ${escapeHtml(r.prediction)} • ${escapeHtml(
+                                r.bpm
+                            )} BPM (${escapeHtml(r.rate_status)})</div>
+                        </div>
+                        <div>${wfAction}</div>
+                    </div>
                     ${r.doctor_note ? `<div style="font-size:12px; color:var(--scai-accent); margin-top:4px;">💬 ${escapeHtml(r.doctor_note)}</div>` : ""}
-                </div>`
-                )
+                </div>`;
+                })
                 .join("");
+
+            body.querySelectorAll(".btn-doc-view-ecg").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const item = rows[Number(btn.dataset.idx)];
+                    if (item) openWaveformModal(item, { isClinical: true });
+                });
+            });
         }
         document.getElementById("patientHistoryModal").classList.add("open");
     } catch (err) {

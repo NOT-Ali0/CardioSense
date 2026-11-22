@@ -328,6 +328,11 @@
                             <canvas id="doctorEcgChart" style="position:relative; z-index:1;"></canvas>
                         </div>
 
+                        <div id="docCaseLegend" class="waveform-legend" style="display:none; margin-top:-8px; margin-bottom:14px;">
+                            <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-ecg"></span><span data-i18n="legendEcg">إشارة ECG</span></span>
+                            <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-att"></span><span data-i18n="legendAttention">تركيز الذكاء الاصطناعي (AI Attention)</span></span>
+                        </div>
+
                         <div id="docAttentionNoteSection" style="display:none; background:var(--scai-surface-elevated); padding:14px; border-radius:8px; margin-bottom:14px; border-inline-start:3px solid var(--scai-accent);">
                             <div style="font-size:12px; font-weight:700; color:var(--scai-accent); margin-bottom:4px;" data-i18n="lblDocAttentionNote">الاستنتاج السريري الدقيق (AI Attention):</div>
                             <div id="doc_attention_note" style="font-size:13px; line-height:1.6;">--</div>
@@ -661,6 +666,30 @@
                 <button class="btn btn-secondary btn-sm" id="btnCloseHistModal" data-i18n="btnClose">إغلاق</button>
             </div>
             <div id="histModalBody" style="max-height:60vh; overflow-y:auto;"></div>
+        </div>
+    </div>
+
+    <!-- Shared: ECG Waveform Viewer Modal (Patient & Doctor/Admin) -->
+    <div id="waveformModal" class="modal-backdrop">
+        <div class="modal-card modal-card-wide">
+            <div class="modal-header">
+                <h3 data-i18n="waveformModalTitle">عرض إشارة تخطيط القلب (ECG)</h3>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <button class="btn btn-secondary btn-sm" id="btnResetWaveformZoom" style="display:none;" data-i18n="btnResetZoom">إعادة ضبط التكبير</button>
+                    <button class="btn btn-secondary btn-sm" id="btnCloseWaveformModal" data-i18n="btnClose">إغلاق</button>
+                </div>
+            </div>
+            <div id="waveformModalMeta" class="waveform-meta-bar"></div>
+            <div id="waveformModalLoading" class="waveform-state-box" style="display:none;" data-i18n="waveformLoading">جاري تحميل إشارة تخطيط القلب...</div>
+            <div id="waveformModalError" class="waveform-state-box waveform-state-error" style="display:none;"></div>
+            <div id="waveformModalChartBox" class="doc-chart-wrapper" style="display:none; height:340px;">
+                <div class="ecg-baseline"></div>
+                <canvas id="waveformModalCanvas" style="position:relative; z-index:1;"></canvas>
+            </div>
+            <div id="waveformModalLegend" class="waveform-legend" style="display:none;">
+                <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-ecg"></span><span data-i18n="legendEcg">إشارة ECG</span></span>
+                <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-att"></span><span data-i18n="legendAttention">تركيز الذكاء الاصطناعي (AI Attention)</span></span>
+            </div>
         </div>
     </div>
 

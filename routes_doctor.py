@@ -17,6 +17,7 @@ from models import (
     PatientHistory,
     PatientDecision,
     MLDatasetRecord,
+    EcgRecording,
     utcnow,
     iso_utc,
 )
@@ -126,7 +127,27 @@ def get_doctor_cases():
         stmt = stmt.order_by(priority_rank.asc(), Case.confidence.asc(), Case.created_at.desc())
 
     cases = db.session.scalars(stmt).all()
-    return jsonify([c.to_summary_dict() for c in cases]), 200
+    case_ids = [c.id for c in cases]
+    rec_case_ids = (
+        set(
+            db.session.scalars(
+                select(EcgRecording.case_id).where(EcgRecording.case_id.in_(case_ids))
+            ).all()
+        )
+        if case_ids
+        else set()
+    )
+    return (
+        jsonify(
+            [
+                c.to_summary_dict(
+                    has_waveform=(c.id in rec_case_ids) or bool(c.signal and c.signal != "[]")
+                )
+                for c in cases
+            ]
+        ),
+        200,
+    )
 
 
 @doctor_bp.route("/api/doctor/archive", methods=["GET"])
@@ -155,7 +176,27 @@ def get_doctor_archive():
 
     stmt = stmt.order_by(Case.reviewed_at.desc(), Case.created_at.desc()).limit(limit).offset(offset)
     cases = db.session.scalars(stmt).all()
-    return jsonify([c.to_summary_dict() for c in cases]), 200
+    case_ids = [c.id for c in cases]
+    rec_case_ids = (
+        set(
+            db.session.scalars(
+                select(EcgRecording.case_id).where(EcgRecording.case_id.in_(case_ids))
+            ).all()
+        )
+        if case_ids
+        else set()
+    )
+    return (
+        jsonify(
+            [
+                c.to_summary_dict(
+                    has_waveform=(c.id in rec_case_ids) or bool(c.signal and c.signal != "[]")
+                )
+                for c in cases
+            ]
+        ),
+        200,
+    )
 
 
 @doctor_bp.route("/api/doctor/cases/<case_id>", methods=["GET"])
@@ -168,7 +209,10 @@ def get_case_detail(case_id: str):
         return jsonify({"error": "Forbidden: case is not assigned to you"}), 403
 
     profile = db.session.get(PatientProfile, case_record.patient_id)
-    return jsonify(case_record.to_detail_dict(profile=profile)), 200
+    recording = db.session.scalar(
+        select(EcgRecording).where(EcgRecording.case_id == case_record.id)
+    )
+    return jsonify(case_record.to_detail_dict(profile=profile, recording=recording)), 200
 
 
 @doctor_bp.route("/api/doctor/respond", methods=["POST"])
@@ -192,15 +236,19 @@ def doctor_respond():
     if case_record.status != "ESCALATED":
         return jsonify({"error": "Case has already been reviewed"}), 409
 
-    # 1. Append to de-identified ML dataset
+    # 1. Append to de-identified ML dataset (reference recording_id instead of copying signal)
+    recording = db.session.scalar(
+        select(EcgRecording).where(EcgRecording.case_id == case_record.id)
+    )
     db.session.add(
         MLDatasetRecord(
             case_id=case_record.id,
+            recording_id=recording.id if recording is not None else None,
             age=str(case_record.age_at_test),
             gender=case_record.gender_at_test or "U",
             ai_prediction=case_record.raw_prediction,
             doctor_label=decision_type,
-            signal=case_record.signal,
+            signal=None if recording is not None else case_record.signal,
             created_at=utcnow(),
         )
     )
@@ -494,4 +542,14 @@ def get_doctor_patient_history(patient_id: int):
         .limit(limit)
         .offset(offset)
     ).all()
-    return jsonify([h.to_dict() for h in rows]), 200
+    hist_ids = [h.id for h in rows]
+    rec_ids = (
+        set(
+            db.session.scalars(
+                select(EcgRecording.history_id).where(EcgRecording.history_id.in_(hist_ids))
+            ).all()
+        )
+        if hist_ids
+        else set()
+    )
+    return jsonify([h.to_dict(has_waveform=(h.id in rec_ids)) for h in rows]), 200

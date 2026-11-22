@@ -127,7 +127,7 @@ def export_dataset():
                 select(MLDatasetRecord).order_by(MLDatasetRecord.id.asc())
             ).yield_per(50)
             for record in records:
-                sig = json.loads(record.signal) if record.signal else []
+                sig = record.get_signal_list()
                 row = [
                     record.case_id or "",
                     str(record.age),

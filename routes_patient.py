@@ -3,6 +3,7 @@ routes_patient.py - Patient consent, profile, ECG inference, case escalation,
 status polling, and diagnostic history endpoints.
 """
 import json
+import math
 import threading
 import uuid
 
@@ -16,10 +17,17 @@ from models import (
     PatientHistory,
     PatientDecision,
     ConsentLog,
+    EcgRecording,
+    encode_float32_le,
+    decimate_minmax,
     utcnow,
     iso_utc,
 )
+from preprocessing import MAX_LEN
 from auth import roles_required, limiter, log_audit
+
+SAMPLE_RATE_HZ = 300
+EXPECTED_SIGNAL_LEN = MAX_LEN
 
 patient_bp = Blueprint("patient_bp", __name__)
 
@@ -65,23 +73,42 @@ def _log_history_entry(
     confidence: str = None,
     message: str = None,
     ai_attention_note: str = None,
-) -> None:
-    db.session.add(
-        PatientHistory(
-            case_id=case_id,
-            patient_id=patient_id,
-            created_at=utcnow(),
-            age=str(age),
-            gender=str(gender),
-            status=status,
-            prediction=prediction,
-            bpm=bpm,
-            rate_status=rate_status,
-            confidence=confidence,
-            message=message,
-            ai_attention_note=ai_attention_note,
-        )
+    created_at=None,
+) -> PatientHistory:
+    entry = PatientHistory(
+        case_id=case_id,
+        patient_id=patient_id,
+        created_at=created_at or utcnow(),
+        age=str(age),
+        gender=str(gender),
+        status=status,
+        prediction=prediction,
+        bpm=bpm,
+        rate_status=rate_status,
+        confidence=confidence,
+        message=message,
+        ai_attention_note=ai_attention_note,
     )
+    db.session.add(entry)
+    return entry
+
+
+def _validate_signal_payload(signal):
+    """Validate ECG signal payload: list of EXPECTED_SIGNAL_LEN finite numbers."""
+    if not isinstance(signal, list):
+        return None, f"Signal must be a JSON array of {EXPECTED_SIGNAL_LEN} finite numbers."
+    if len(signal) != EXPECTED_SIGNAL_LEN:
+        return None, f"Signal must contain exactly {EXPECTED_SIGNAL_LEN} samples (got {len(signal)})."
+
+    signal_floats = []
+    for x in signal:
+        if isinstance(x, bool) or not isinstance(x, (int, float)):
+            return None, "Signal must contain only finite numeric values."
+        val = float(x)
+        if not math.isfinite(val):
+            return None, "Signal must not contain NaN or infinite values."
+        signal_floats.append(val)
+    return signal_floats, None
 
 
 def compute_case_priority(raw_prediction: str, bpm: int, confidence: float) -> str:
@@ -210,26 +237,23 @@ def run_prediction():
         return jsonify({"error": "Patient clinical profile is missing. Contact your doctor."}), 400
 
     data = request.get_json(silent=True) or {}
-    signal = data.get("signal")
-    if not isinstance(signal, list) or len(signal) == 0 or len(signal) > 20000:
-        return jsonify({"error": "Valid ECG signal array is required"}), 400
-
-    try:
-        signal_floats = [float(x) for x in signal]
-    except (TypeError, ValueError):
-        return jsonify({"error": "Signal must contain numeric values"}), 400
+    signal_floats, val_err = _validate_signal_payload(data.get("signal"))
+    if val_err:
+        return jsonify({"error": val_err}), 400
 
     patient_age = profile.age
     patient_gender = profile.gender
     case_id = uuid.uuid4().hex[:12]
+    signal_blob = encode_float32_le(signal_floats)
 
     try:
         bpm, rate_status = main_app.analyze_heart_rate(signal_floats)
         is_valid, message = main_app.smart_gatekeeper(signal_floats)
+        now = utcnow()
 
         if not is_valid:
             _set_patient_decision(user.id, f"🟡 REJECTED: {message.upper()}")
-            _log_history_entry(
+            hist = _log_history_entry(
                 case_id=case_id,
                 patient_id=user.id,
                 age=patient_age,
@@ -239,6 +263,20 @@ def run_prediction():
                 bpm=bpm,
                 rate_status="CORRUPTED",
                 message=message,
+                created_at=now,
+            )
+            db.session.flush()
+            db.session.add(
+                EcgRecording(
+                    history_id=hist.id,
+                    case_id=None,
+                    patient_id=user.id,
+                    sample_rate_hz=SAMPLE_RATE_HZ,
+                    n_samples=len(signal_floats),
+                    signal=signal_blob,
+                    attention=None,
+                    created_at=now,
+                )
             )
             db.session.commit()
             return (
@@ -250,7 +288,12 @@ def run_prediction():
         prediction = result.get("prediction", "UNCERTAIN")
         confidence = float(result.get("confidence", 0.0))
         prob = float(result.get("probability", 0.0))
-        xai_weights_list = result.get("xai_weights", [0.0] * 3000)
+        xai_weights_list = result.get("xai_weights")
+        attention_blob = (
+            encode_float32_le(xai_weights_list)
+            if isinstance(xai_weights_list, list) and len(xai_weights_list) > 0
+            else None
+        )
         raw_ai_prediction = "AFIB" if prob >= 0.5 else "NORMAL"
 
         if prediction == "UNCERTAIN":
@@ -270,19 +313,19 @@ def run_prediction():
                 chronic=chronic_str,
                 symptoms="[]",
                 history=json.dumps(chronic_list, ensure_ascii=False),
-                signal=json.dumps(signal_floats),
+                signal="[]",
                 confidence=confidence,
                 raw_prediction=raw_ai_prediction,
                 prediction="UNCERTAIN",
                 bpm=bpm,
                 rate_status=rate_status,
-                created_at=utcnow(),
-                xai_weights=json.dumps(xai_weights_list),
+                created_at=now,
+                xai_weights="[]",
                 ai_attention_note="",
             )
             db.session.add(new_case)
             _set_patient_decision(user.id, "⚪ ESCALATED: Awaiting Physician Review.")
-            _log_history_entry(
+            hist = _log_history_entry(
                 case_id=case_id,
                 patient_id=user.id,
                 age=patient_age,
@@ -293,6 +336,20 @@ def run_prediction():
                 rate_status=rate_status,
                 confidence=f"{confidence:.2%}",
                 ai_attention_note="",
+                created_at=now,
+            )
+            db.session.flush()
+            db.session.add(
+                EcgRecording(
+                    history_id=hist.id,
+                    case_id=case_id,
+                    patient_id=user.id,
+                    sample_rate_hz=SAMPLE_RATE_HZ,
+                    n_samples=len(signal_floats),
+                    signal=signal_blob,
+                    attention=attention_blob,
+                    created_at=now,
+                )
             )
             db.session.commit()
             return (
@@ -311,7 +368,7 @@ def run_prediction():
             )
 
         _set_patient_decision(user.id, f"🟢 DIAGNOSIS: {prediction}")
-        _log_history_entry(
+        hist = _log_history_entry(
             case_id=case_id,
             patient_id=user.id,
             age=patient_age,
@@ -321,6 +378,20 @@ def run_prediction():
             bpm=bpm,
             rate_status=rate_status,
             confidence=f"{confidence:.2%}",
+            created_at=now,
+        )
+        db.session.flush()
+        db.session.add(
+            EcgRecording(
+                history_id=hist.id,
+                case_id=None,
+                patient_id=user.id,
+                sample_rate_hz=SAMPLE_RATE_HZ,
+                n_samples=len(signal_floats),
+                signal=signal_blob,
+                attention=attention_blob,
+                created_at=now,
+            )
         )
         db.session.commit()
         return (
@@ -373,15 +444,25 @@ def update_case():
     case_record.complaint = "، ".join(symptoms_clean) if symptoms_clean else "لا توجد أعراض"
     case_record.chronic = "، ".join(chronic_list) if chronic_list else "لا يوجد تاريخ مرضي"
 
-    if main_app.LLM_AVAILABLE and case_record.xai_weights and not case_record.ai_attention_note:
+    xai_list = []
+    recording = db.session.scalar(
+        select(EcgRecording).where(EcgRecording.case_id == case_record.id)
+    )
+    if recording is not None and recording.attention is not None:
+        xai_list = recording.get_attention_array().tolist()
+    elif case_record.xai_weights:
+        try:
+            parsed = json.loads(case_record.xai_weights)
+            if isinstance(parsed, list):
+                xai_list = parsed
+        except Exception:
+            xai_list = []
+
+    if main_app.LLM_AVAILABLE and xai_list and not case_record.ai_attention_note:
         case_record.ai_attention_note = (
             "جاري توليد التفسير السريري الدقيق في الخلفية... (يُرجى الانتظار بضع ثوانٍ)"
         )
         db.session.commit()
-        try:
-            xai_list = json.loads(case_record.xai_weights)
-        except Exception:
-            xai_list = []
 
         app_obj = current_app._get_current_object()
         if not app_obj.config.get("TESTING"):
@@ -426,4 +507,75 @@ def get_patient_history():
         .limit(limit)
         .offset(offset)
     ).all()
-    return jsonify([h.to_dict() for h in rows]), 200
+    hist_ids = [h.id for h in rows]
+    rec_ids = (
+        set(
+            db.session.scalars(
+                select(EcgRecording.history_id).where(EcgRecording.history_id.in_(hist_ids))
+            ).all()
+        )
+        if hist_ids
+        else set()
+    )
+    return jsonify([h.to_dict(has_waveform=(h.id in rec_ids)) for h in rows]), 200
+
+
+@patient_bp.route("/api/history/<int:history_id>/waveform", methods=["GET"])
+@roles_required("patient", "doctor", "admin")
+def get_history_waveform(history_id: int):
+    hist = db.session.get(PatientHistory, history_id)
+    if hist is None:
+        return jsonify({"error": "Waveform not found"}), 404
+
+    user = g.current_user
+    if user.role == "patient":
+        if hist.patient_id != user.id:
+            return jsonify({"error": "Waveform not found"}), 404
+    elif user.role == "doctor":
+        profile = db.session.get(PatientProfile, hist.patient_id)
+        if profile is None or profile.doctor_id != user.id:
+            return jsonify({"error": "Waveform not found"}), 404
+
+    rec = db.session.scalar(
+        select(EcgRecording).where(EcgRecording.history_id == history_id)
+    )
+    if rec is None:
+        return jsonify({"error": "Waveform not found"}), 404
+
+    max_points_raw = request.args.get("max_points")
+    max_points = None
+    if max_points_raw is not None and max_points_raw != "":
+        try:
+            max_points = int(max_points_raw)
+        except ValueError:
+            return jsonify({"error": "max_points must be a positive integer"}), 400
+        if max_points <= 0:
+            return jsonify({"error": "max_points must be a positive integer"}), 400
+        max_points = min(max_points, rec.n_samples)
+
+    signal_arr = rec.get_signal_array()
+    include_attention = user.role in ("doctor", "admin") and rec.attention is not None
+    att_arr = rec.get_attention_array() if include_attention else None
+    if att_arr is not None and len(att_arr) != len(signal_arr):
+        att_arr = None
+
+    if max_points is not None and max_points < len(signal_arr):
+        samples_out, attention_out = decimate_minmax(signal_arr, max_points, att_arr)
+    else:
+        samples_out = signal_arr.tolist()
+        attention_out = att_arr.tolist() if att_arr is not None else None
+
+    duration_s = round(rec.n_samples / rec.sample_rate_hz, 4) if rec.sample_rate_hz > 0 else 0.0
+    return (
+        jsonify(
+            {
+                "history_id": hist.id,
+                "sample_rate_hz": rec.sample_rate_hz,
+                "n_samples": rec.n_samples,
+                "samples": samples_out,
+                "attention": attention_out,
+                "duration_s": duration_s,
+            }
+        ),
+        200,
+    )

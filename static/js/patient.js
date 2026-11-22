@@ -4,6 +4,7 @@
  */
 import { apiFetch, escapeHtml, formatDateTime, showToast, getCurrentUser } from "./api.js";
 import { t, getLang } from "./i18n.js";
+import { openWaveformModal } from "./waveform.js";
 import {
     initPatientEcgChart,
     getRawSignalBuffer,
@@ -313,7 +314,7 @@ export async function loadPatientHistory() {
                 )}</p>`;
             } else {
                 box.innerHTML = rows
-                    .map((x) => {
+                    .map((x, idx) => {
                         const pred = x.prediction || "";
                         const isBad = pred.toUpperCase().includes("AFIB") || x.status === "ESCALATED";
                         const isWarn = x.status === "REJECTED" || pred.toUpperCase().includes("REJECTED");
@@ -322,14 +323,26 @@ export async function loadPatientHistory() {
                             : isBad
                             ? "var(--medical-red)"
                             : "var(--medical-green)";
+                        const wfAction = x.has_waveform
+                            ? `<button class="btn btn-secondary btn-sm btn-pat-view-ecg" data-idx="${idx}">${escapeHtml(
+                                  t("btnViewEcg")
+                              )}</button>`
+                            : `<span style="font-size:11px; color:var(--white-muted);">${escapeHtml(
+                                  t("noWaveformStored")
+                              )}</span>`;
                         return `<div class="message-item" style="border-inline-start-color:${color};">
-                            <div style="font-size:11px; color:var(--white-muted);">⏱ ${escapeHtml(formatDateTime(x.ts))}</div>
-                            <div style="font-weight:700; margin-top:4px;">${escapeHtml(x.status)}${
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+                                <div>
+                                    <div style="font-size:11px; color:var(--white-muted);">⏱ ${escapeHtml(formatDateTime(x.ts))}</div>
+                                    <div style="font-weight:700; margin-top:4px;">${escapeHtml(x.status)}${
                             pred && pred !== "N/A" ? " • " + escapeHtml(pred) : ""
                         }</div>
-                            <div style="font-size:12px; color:var(--white-muted);">${escapeHtml(
-                                x.bpm ?? "--"
-                            )} BPM (${escapeHtml(x.rate_status || "--")})</div>
+                                    <div style="font-size:12px; color:var(--white-muted);">${escapeHtml(
+                                        x.bpm ?? "--"
+                                    )} BPM (${escapeHtml(x.rate_status || "--")})</div>
+                                </div>
+                                <div>${wfAction}</div>
+                            </div>
                             ${
                                 x.doctor_note
                                     ? `<div style="margin-top:6px; font-size:12px; color:var(--scai-accent);">💬 ${escapeHtml(
@@ -340,6 +353,13 @@ export async function loadPatientHistory() {
                         </div>`;
                     })
                     .join("");
+
+                box.querySelectorAll(".btn-pat-view-ecg").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        const item = rows[Number(btn.dataset.idx)];
+                        if (item) openWaveformModal(item, { isClinical: false });
+                    });
+                });
             }
         }
 

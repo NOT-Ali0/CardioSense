@@ -44,6 +44,11 @@ import {
     stopDoctorPolling,
 } from "./doctor.js";
 import {
+    getWaveformModalChart,
+    closeWaveformModal,
+    resetWaveformModalZoom,
+} from "./waveform.js";
+import {
     switchAdminTab,
     fetchAdminStats,
     downloadMLDataset,
@@ -77,6 +82,11 @@ function applyTheme(theme) {
     if (docChart) {
         docChart.data.datasets[0].borderColor = sigColor;
         docChart.update("none");
+    }
+    const wfChart = getWaveformModalChart();
+    if (wfChart) {
+        wfChart.data.datasets[0].borderColor = sigColor;
+        wfChart.update("none");
     }
 }
 
@@ -163,6 +173,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btnCloseEditClinical")?.addEventListener("click", closeEditClinicalModal);
     document.getElementById("editClinicalForm")?.addEventListener("submit", submitEditClinical);
     document.getElementById("btnCloseHistModal")?.addEventListener("click", closePatientHistoryModal);
+    document.getElementById("btnCloseWaveformModal")?.addEventListener("click", closeWaveformModal);
+    document.getElementById("btnResetWaveformZoom")?.addEventListener("click", resetWaveformModalZoom);
 
     // Admin Portal
     document.querySelectorAll("#adminView .tab-btn").forEach((btn) =>

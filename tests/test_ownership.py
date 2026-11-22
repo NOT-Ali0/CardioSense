@@ -40,6 +40,7 @@ def test_all_protected_endpoints_reject_anonymous(client):
         ("POST", "/api/patient/update_case"),
         ("GET", "/api/patient/status"),
         ("GET", "/api/patient/history"),
+        ("GET", "/api/history/1/waveform"),
         ("GET", "/api/doctor/dashboard"),
         ("GET", "/api/doctor/cases"),
         ("GET", "/api/doctor/archive"),

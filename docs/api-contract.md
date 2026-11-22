@@ -71,7 +71,8 @@
 
 ### `POST /predict`
 - **CSRF:** Required | **Rate Limit:** `30/min`
-- **Request:** `{ "signal": [float, ...] }` (ignores any `name`/`age`/`gender`; reads `age`, `gender`, `doctor_id`, `chronic_conditions` from `patient_profiles`).
+- **Request:** `{ "signal": [float, ...] }` — MUST be a JSON array of exactly `3000` finite numbers (no `NaN`, `Inf`, strings, or booleans; returns `400` otherwise and persists nothing). Ignores any `name`/`age`/`gender`; reads `age`, `gender`, `doctor_id`, `chronic_conditions` from `patient_profiles`.
+- **Persistence:** Atomically stores the `PatientHistory` entry, optional `Case` (if escalated), and `EcgRecording` (binary float32 signal + optional float32 attention weights) in a single transaction, including for `REJECTED` tests that passed payload validation.
 - **Response `200`:**
   - `SUCCESS`: `{ "status": "SUCCESS", "prediction": "NORMAL"|"AFIB", "confidence": "98.12%", "bpm": 74, "rate_status": "NORMAL" }`
   - `REJECTED`: `{ "status": "REJECTED", "message": "...", "bpm": 72, "rate_status": "CORRUPTED" }`
@@ -92,7 +93,26 @@
 
 ### `GET /api/patient/history`
 - Query: `?limit=50&offset=0`
-- **Response `200`:** Array of `{ id, ts, created_at, case_id, age, gender, status, prediction, bpm, rate_status, confidence, message, doctor_note }`.
+- **Response `200`:** Array of `{ id, ts, created_at, case_id, age, gender, status, prediction, bpm, rate_status, has_waveform, confidence, message, doctor_note }`. Does NOT include raw samples.
+
+### `GET /api/history/<history_id>/waveform` (`patient`, `doctor`, `admin`)
+- **Auth & Ownership:**
+  - Unauthenticated -> `401`.
+  - `patient`: own history records only; `doctor`: assigned patients' history records only; `admin`: all records.
+  - Missing history record, unauthorized record, or record without a stored waveform -> `404` (to avoid leaking record existence).
+- **Query:** `?max_points=N` (optional positive integer; capped at `n_samples`; returns `400` if invalid). When `max_points < n_samples`, applies peak-preserving min/max decimation returning `<= max_points` points.
+- **Response `200`:**
+  ```json
+  {
+    "history_id": 12,
+    "sample_rate_hz": 300,
+    "n_samples": 3000,
+    "samples": [2000.0, ...],
+    "attention": [0.12, ...] | null,
+    "duration_s": 10.0
+  }
+  ```
+  - `attention` is ALWAYS `null` for `patient` role; populated for `doctor`/`admin` when attention weights were stored.
 
 ---
 
@@ -103,14 +123,15 @@
 
 ### `GET /api/doctor/cases` (`doctor`, `admin`)
 - Query: `?search=&priority=URGENT|HIGH|NORMAL&raw_prediction=AFIB|NORMAL&rate_status=&sort=priority|confidence|newest`
-- Returns lightweight case summaries (omits `signal` and `xai_weights`), strictly scoped to `doctor_id` for doctors.
+- Returns lightweight case summaries including `has_waveform` (bool), omitting `signal` and `xai_weights`, strictly scoped to `doctor_id` for doctors.
 
 ### `GET /api/doctor/archive` (`doctor`, `admin`)
 - Query: `?search=&decision=INFECTED|HEALTHY|NOISY&limit=50&offset=0`
+- Returns lightweight archived case summaries including `has_waveform` (bool), omitting `signal` and `xai_weights`.
 
 ### `GET /api/doctor/cases/<case_id>` (`doctor`, `admin`)
 - Ownership: `case.doctor_id == session.user_id` for doctors (`403` otherwise).
-- Returns full case detail including `signal` (3,000 floats), `xai_weights` (3,000 floats), `ai_attention_note`, and nested `patient_profile`.
+- Returns full case detail including `has_waveform`, `sample_rate_hz`, `signal` (loaded from `EcgRecording`), `xai_weights` (loaded from `EcgRecording`), `ai_attention_note`, and nested `patient_profile`.
 
 ### `POST /api/doctor/respond` (`doctor` ONLY — admin is read-only)
 - **CSRF:** Required | **Ownership:** `case.doctor_id == session.user_id` AND `case.status == "ESCALATED"`
@@ -132,7 +153,7 @@
 - Ownership verified for doctors. `PATCH` updates clinical fields (`full_name`, `age`, `gender`, `chronic_conditions`, `clinical_notes`).
 
 ### `GET /api/doctor/patients/<patient_id>/history` (`doctor`, `admin`)
-- Ownership verified for doctors. Returns patient history array.
+- Ownership verified for doctors. Returns patient history array with `has_waveform` (bool) on each item (no raw samples).
 
 ---
 
