@@ -167,6 +167,68 @@ def _upgrade_legacy_v1_schema_if_needed(application: Flask) -> None:
         conn.execute(text("PRAGMA foreign_keys=ON"))
 
 
+def _upgrade_ml_dataset_schema_if_needed(application: Flask) -> None:
+    """
+    Ensure existing SQLite databases (e.g., Docker volumes started without `flask db upgrade`)
+    have `ml_dataset.recording_id` and nullable `ml_dataset.signal` while preserving all rows.
+    """
+    from sqlalchemy import text
+
+    inspector = sa_inspect(db.engine)
+    if "ml_dataset" not in set(inspector.get_table_names()):
+        return
+
+    cols = {c["name"]: c for c in inspector.get_columns("ml_dataset")}
+    has_recording_id = "recording_id" in cols
+    signal_nullable = bool(cols.get("signal", {}).get("nullable", True))
+    if has_recording_id and signal_nullable:
+        return
+
+    application.logger.info("Upgrading ml_dataset schema to add recording_id and nullable signal.")
+    with db.engine.begin() as conn:
+        conn.execute(text("PRAGMA foreign_keys=OFF"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE _ml_dataset_new (
+                    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    case_id VARCHAR(36),
+                    recording_id INTEGER,
+                    age VARCHAR(20) NOT NULL,
+                    gender VARCHAR(10) NOT NULL,
+                    ai_prediction VARCHAR(20) NOT NULL,
+                    doctor_label VARCHAR(50) NOT NULL,
+                    signal TEXT,
+                    created_at DATETIME NOT NULL,
+                    FOREIGN KEY(case_id) REFERENCES cases (id) ON DELETE SET NULL,
+                    FOREIGN KEY(recording_id) REFERENCES ecg_recordings (id) ON DELETE SET NULL
+                )
+                """
+            )
+        )
+        if has_recording_id:
+            conn.execute(
+                text(
+                    "INSERT INTO _ml_dataset_new (id, case_id, recording_id, age, gender, ai_prediction, doctor_label, signal, created_at) "
+                    "SELECT id, case_id, recording_id, age, gender, ai_prediction, doctor_label, signal, created_at FROM ml_dataset"
+                )
+            )
+        else:
+            conn.execute(
+                text(
+                    "INSERT INTO _ml_dataset_new (id, case_id, recording_id, age, gender, ai_prediction, doctor_label, signal, created_at) "
+                    "SELECT id, case_id, NULL, age, gender, ai_prediction, doctor_label, signal, created_at FROM ml_dataset"
+                )
+            )
+        conn.execute(text("DROP TABLE ml_dataset"))
+        conn.execute(text("ALTER TABLE _ml_dataset_new RENAME TO ml_dataset"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_ml_dataset_case_id ON ml_dataset (case_id)"))
+        conn.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_ml_dataset_recording_id ON ml_dataset (recording_id)")
+        )
+        conn.execute(text("PRAGMA foreign_keys=ON"))
+
+
 def create_app(test_config: dict | None = None) -> Flask:
     application = Flask(__name__, static_folder="static", static_url_path="/api/static")
 
@@ -319,6 +381,7 @@ def create_app(test_config: dict | None = None) -> Flask:
         if os.getenv("SKIP_CREATE_ALL") != "1":
             _upgrade_legacy_v1_schema_if_needed(application)
             db.create_all()
+            _upgrade_ml_dataset_schema_if_needed(application)
         if not application.config.get("TESTING") and os.getenv("SKIP_CREATE_ALL") != "1":
             bootstrap_admin_from_env(application)
 

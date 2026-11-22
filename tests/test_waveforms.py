@@ -410,3 +410,61 @@ def test_history_without_recording_returns_has_waveform_false_and_404(app, seede
 
     wf_res = pat1_client.get(f"/api/history/{old_id}/waveform")
     assert wf_res.status_code == 404
+
+
+def test_ml_dataset_auto_upgrades_missing_recording_id_on_startup(tmp_path):
+    """Simulate an existing Docker SQLite DB created before recording_id was added to ml_dataset."""
+    import sqlite3
+    from app import create_app
+
+    db_file = tmp_path / "pre_recording_id.db"
+    conn = sqlite3.connect(db_file)
+    conn.execute(
+        """
+        CREATE TABLE ml_dataset (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            case_id VARCHAR(36),
+            age VARCHAR(20) NOT NULL,
+            gender VARCHAR(10) NOT NULL,
+            ai_prediction VARCHAR(20) NOT NULL,
+            doctor_label VARCHAR(50) NOT NULL,
+            signal TEXT NOT NULL,
+            created_at DATETIME NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        "INSERT INTO ml_dataset (case_id, age, gender, ai_prediction, doctor_label, signal, created_at) "
+        "VALUES ('old_c1', '50', 'M', 'NORMAL', 'HEALTHY', '[1.0, 2.0]', '2026-11-21 10:00:00')"
+    )
+    conn.commit()
+    conn.close()
+
+    upgraded_app = create_app(
+        {
+            "TESTING": True,
+            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_file}",
+            "SESSION_COOKIE_SECURE": False,
+            "RATELIMIT_ENABLED": False,
+            "SECRET_KEY": "test-secret-key-for-pytest-only-32bytes!",
+        }
+    )
+    with upgraded_app.app_context():
+        rows = db.session.scalars(select(MLDatasetRecord)).all()
+        assert len(rows) == 1
+        assert rows[0].case_id == "old_c1"
+        assert rows[0].recording_id is None
+        assert rows[0].get_signal_list() == [1.0, 2.0]
+
+        new_row = MLDatasetRecord(
+            case_id=None,
+            recording_id=None,
+            age="24",
+            gender="M",
+            ai_prediction="NORMAL",
+            doctor_label="NOISY",
+            signal=None,
+        )
+        db.session.add(new_row)
+        db.session.commit()
+        assert new_row.id is not None
