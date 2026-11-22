@@ -51,6 +51,9 @@ import {
 import {
     switchAdminTab,
     fetchAdminStats,
+    fetchAdminUsers,
+    renderAdminUsers,
+    fetchAuditLogs,
     downloadMLDataset,
     openAddDoctorModal,
     closeAddDoctorModal,
@@ -181,7 +184,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         btn.addEventListener("click", () => switchAdminTab(btn.dataset.tab))
     );
     document.getElementById("btnExportDataset")?.addEventListener("click", downloadMLDataset);
-    document.getElementById("btnAdminRefresh")?.addEventListener("click", fetchAdminStats);
+    document.getElementById("btnExportDatasetCard")?.addEventListener("click", downloadMLDataset);
+    document.getElementById("btnAdminRefresh")?.addEventListener("click", () => {
+        fetchAdminStats();
+        fetchAdminUsers();
+    });
+    document.getElementById("adminUserSearch")?.addEventListener("input", renderAdminUsers);
+    document.getElementById("adminUserStatusFilter")?.addEventListener("change", renderAdminUsers);
+    document.getElementById("adminAuditActionFilter")?.addEventListener("change", fetchAuditLogs);
     document.getElementById("btnOpenAddDoctor")?.addEventListener("click", openAddDoctorModal);
     document.getElementById("btnCloseAddDoctor")?.addEventListener("click", closeAddDoctorModal);
     document.getElementById("addDoctorForm")?.addEventListener("submit", submitAddDoctor);

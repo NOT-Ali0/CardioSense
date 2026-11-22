@@ -1,12 +1,13 @@
 /**
  * admin.js - Admin telemetry, ML dataset export, user management
- * (create/deactivate doctors, create/reassign patients), and audit logs.
+ * (create/deactivate doctors, create/reassign patients, search/filter), and audit logs.
  */
 import { apiFetch, escapeHtml, formatDateTime, showToast, getCurrentUser } from "./api.js";
 import { t, getLang } from "./i18n.js";
 
 let _adminChart = null;
 let _cachedDoctors = [];
+let _allAdminUsers = [];
 
 export async function initAdminPortal() {
     await Promise.all([fetchAdminStats(), fetchAdminUsers()]);
@@ -24,40 +25,120 @@ export function switchAdminTab(tabId) {
     if (tabId === "adminTelemetryTab") fetchAdminStats();
 }
 
+function _fmtPct(part, total) {
+    if (!total) return "0%";
+    return `${Math.round((part / total) * 100)}%`;
+}
+
+function _initials(name) {
+    const clean = (name || "").trim();
+    if (!clean) return "?";
+    const parts = clean.split(/\s+/);
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return clean.slice(0, 2).toUpperCase();
+}
+
 export async function fetchAdminStats() {
     try {
         const data = await apiFetch("/api/admin/stats");
         const s = data.stats || {};
-        document.getElementById("stat_total").textContent = s.total_tests ?? 0;
-        document.getElementById("stat_normal").textContent = s.normal_tests ?? 0;
-        document.getElementById("stat_afib").textContent = s.afib_tests ?? 0;
-        document.getElementById("stat_rejected").textContent = s.rejected_tests ?? 0;
-        document.getElementById("stat_escalated").textContent = s.escalated_tests ?? 0;
-        document.getElementById("stat_dataset").textContent = data.dataset_size ?? 0;
+        const u = data.users || {};
+
+        const total = s.total_tests ?? 0;
+        const normal = s.normal_tests ?? 0;
+        const afib = s.afib_tests ?? 0;
+        const escalated = s.escalated_tests ?? 0;
+        const rejected = s.rejected_tests ?? 0;
+        const dsSize = data.dataset_size ?? 0;
+
+        const setText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+
+        setText("stat_total", total);
+        setText("stat_normal", normal);
+        setText("stat_afib", afib);
+        setText("stat_rejected", rejected);
+        setText("stat_escalated", escalated);
+        setText("stat_dataset", dsSize);
+        setText("stat_dataset_badge", dsSize);
+
+        setText("stat_normal_pct", _fmtPct(normal, total));
+        setText("stat_afib_pct", _fmtPct(afib, total));
+        setText("stat_escalated_pct", _fmtPct(escalated, total));
+        setText("stat_rejected_pct", _fmtPct(rejected, total));
+        setText("adminChartCenterTotal", total);
+
+        setText("ops_active_doctors", u.active_doctors ?? 0);
+        setText("ops_active_patients", u.active_patients ?? 0);
+        setText("ops_pending_cases", u.pending_cases ?? 0);
+
+        const segments = [
+            { label: t("kpiNormalTests"), value: normal, color: "#10b981" },
+            { label: t("kpiAfibTests"), value: afib, color: "#ef4444" },
+            { label: t("kpiEscalatedTests"), value: escalated, color: "#06b6d4" },
+            { label: t("kpiRejectedTests"), value: rejected, color: "#eab308" },
+        ];
+
+        const breakdownEl = document.getElementById("adminDistributionBreakdown");
+        if (breakdownEl) {
+            breakdownEl.innerHTML = segments
+                .map((seg) => {
+                    const pct = total ? Math.round((seg.value / total) * 100) : 0;
+                    return `<div class="admin-breakdown-row">
+                        <div class="admin-breakdown-head">
+                            <span class="admin-breakdown-name">
+                                <span class="admin-breakdown-swatch" style="background:${seg.color};"></span>
+                                ${escapeHtml(seg.label)}
+                            </span>
+                            <span class="admin-breakdown-nums"><strong>${seg.value}</strong> (${pct}%)</span>
+                        </div>
+                        <div class="admin-breakdown-track">
+                            <div class="admin-breakdown-fill" style="width:${pct}%; background:${seg.color};"></div>
+                        </div>
+                    </div>`;
+                })
+                .join("");
+        }
 
         const ctx = document.getElementById("adminStatsChart")?.getContext("2d");
         if (!ctx) return;
-        const chartVals = [s.normal_tests, s.afib_tests, s.escalated_tests, s.rejected_tests];
+        const chartVals = segments.map((seg) => seg.value);
+        const hasAny = chartVals.some((v) => v > 0);
+        const displayVals = hasAny ? chartVals : [1];
+        const displayColors = hasAny ? segments.map((seg) => seg.color) : ["rgba(148,163,184,0.22)"];
+        const displayLabels = hasAny ? segments.map((seg) => seg.label) : [t("noData")];
+
         if (_adminChart) {
-            _adminChart.data.datasets[0].data = chartVals;
+            _adminChart.data.labels = displayLabels;
+            _adminChart.data.datasets[0].data = displayVals;
+            _adminChart.data.datasets[0].backgroundColor = displayColors;
             _adminChart.update();
         } else {
             _adminChart = new Chart(ctx, {
                 type: "doughnut",
                 data: {
-                    labels: ["NORMAL", "AFIB", "ESCALATED", "REJECTED"],
+                    labels: displayLabels,
                     datasets: [
                         {
-                            data: chartVals,
-                            backgroundColor: ["#10b981", "#ef4444", "#06b6d4", "#eab308"],
+                            data: displayVals,
+                            backgroundColor: displayColors,
                             borderWidth: 0,
+                            hoverOffset: 5,
                         },
                     ],
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: "right" } },
+                    cutout: "72%",
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: hasAny },
+                    },
                 },
             });
         }
@@ -73,19 +154,65 @@ export function downloadMLDataset() {
 export async function fetchAdminUsers() {
     try {
         const users = await apiFetch("/api/admin/users");
-        const me = getCurrentUser();
-        const doctors = users.filter((u) => u.role === "doctor");
-        const patients = users.filter((u) => u.role === "patient");
-        _cachedDoctors = doctors.filter((d) => d.is_active);
+        _allAdminUsers = Array.isArray(users) ? users : [];
+        _cachedDoctors = _allAdminUsers.filter((u) => u.role === "doctor" && u.is_active);
+        renderAdminUsers();
+    } catch (err) {
+        showToast(err.message, "error");
+    }
+}
 
-        const docTbody = document.getElementById("adminDoctorsTableBody");
+export function renderAdminUsers() {
+    const me = getCurrentUser();
+    const search = (document.getElementById("adminUserSearch")?.value || "").trim().toLowerCase();
+    const statusFilter = document.getElementById("adminUserStatusFilter")?.value || "all";
+
+    const allDoctors = _allAdminUsers.filter((u) => u.role === "doctor");
+    const allPatients = _allAdminUsers.filter((u) => u.role === "patient");
+    const activeDoctorsCount = allDoctors.filter((u) => u.is_active).length;
+    const activePatientsCount = allPatients.filter((u) => u.is_active).length;
+    const inactiveCount = _allAdminUsers.filter((u) => u.role !== "admin" && !u.is_active).length;
+
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    };
+    setText("user_sum_doctors", activeDoctorsCount);
+    setText("user_sum_patients", activePatientsCount);
+    setText("user_sum_inactive", inactiveCount);
+
+    const matches = (u) => {
+        if (statusFilter === "active" && !u.is_active) return false;
+        if (statusFilter === "inactive" && u.is_active) return false;
+        if (search) {
+            const hay = `${u.full_name || ""} ${u.username || ""} ${u.doctor_name || ""}`.toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    };
+
+    const doctors = allDoctors.filter(matches);
+    const patients = allPatients.filter(matches);
+
+    setText("adminDoctorsCount", doctors.length);
+    setText("adminPatientsCount", patients.length);
+
+    const docTbody = document.getElementById("adminDoctorsTableBody");
+    if (docTbody) {
         docTbody.innerHTML = doctors.length
             ? doctors
                   .map(
                       (d) => `<tr>
-                <td><strong>${escapeHtml(d.full_name)}</strong></td>
-                <td>@${escapeHtml(d.username)}</td>
-                <td>${escapeHtml(d.active_patients_count ?? 0)}</td>
+                <td>
+                    <div class="user-cell">
+                        <span class="user-avatar">${escapeHtml(_initials(d.full_name))}</span>
+                        <div>
+                            <strong>${escapeHtml(d.full_name)}</strong>
+                            <div class="user-meta-sub">@${escapeHtml(d.username)}</div>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="count-pill">${escapeHtml(d.active_patients_count ?? 0)}</span></td>
                 <td><span class="badge ${d.is_active ? "badge-success" : "badge-muted"}">${escapeHtml(
                           d.is_active ? t("activeBadge") : t("inactiveBadge")
                       )}</span></td>
@@ -99,20 +226,32 @@ export async function fetchAdminUsers() {
             </tr>`
                   )
                   .join("")
-            : `<tr><td colspan="5" style="text-align:center; color:var(--white-muted);">${escapeHtml(
+            : `<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--white-muted);">${escapeHtml(
                   t("noData")
               )}</td></tr>`;
+    }
 
-        const patTbody = document.getElementById("adminPatientsTableBody");
+    const patTbody = document.getElementById("adminPatientsTableBody");
+    if (patTbody) {
         patTbody.innerHTML = patients.length
             ? patients
-                  .map(
-                      (p) => `<tr>
-                <td><strong>${escapeHtml(p.full_name)}</strong><div style="font-size:11px; color:var(--white-muted);">@${escapeHtml(
-                          p.username
-                      )}</div></td>
-                <td>${escapeHtml(p.age ?? "--")} / ${escapeHtml(p.gender || "--")}</td>
-                <td>${escapeHtml(p.doctor_name || "--")}</td>
+                  .map((p) => {
+                      const genderLabel =
+                          p.gender === "M" ? t("optMale") : p.gender === "F" ? t("optFemale") : "--";
+                      return `<tr>
+                <td>
+                    <div class="user-cell">
+                        <span class="user-avatar user-avatar-patient">${escapeHtml(_initials(p.full_name))}</span>
+                        <div>
+                            <strong>${escapeHtml(p.full_name)}</strong>
+                            <div class="user-meta-sub">@${escapeHtml(p.username)}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>${escapeHtml(p.age ?? "--")} <span style="color:var(--white-muted);">/</span> ${escapeHtml(
+                          genderLabel
+                      )}</td>
+                <td><span class="badge badge-info">${escapeHtml(p.doctor_name || "--")}</span></td>
                 <td><span class="badge ${p.is_active ? "badge-success" : "badge-muted"}">${escapeHtml(
                           p.is_active ? t("activeBadge") : t("inactiveBadge")
                       )}</span></td>
@@ -132,26 +271,24 @@ export async function fetchAdminUsers() {
                         }
                     </div>
                 </td>
-            </tr>`
-                  )
+            </tr>`;
+                  })
                   .join("")
-            : `<tr><td colspan="5" style="text-align:center; color:var(--white-muted);">${escapeHtml(
+            : `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--white-muted);">${escapeHtml(
                   t("noData")
               )}</td></tr>`;
-
-        document.querySelectorAll("#adminUsersTab .btn-toggle-status").forEach((btn) => {
-            btn.addEventListener("click", () =>
-                toggleUserActive(Number(btn.dataset.id), btn.dataset.active === "true")
-            );
-        });
-        document.querySelectorAll("#adminUsersTab .btn-reassign-pat").forEach((btn) => {
-            btn.addEventListener("click", () =>
-                openReassignModal(Number(btn.dataset.id), btn.dataset.name, Number(btn.dataset.doc))
-            );
-        });
-    } catch (err) {
-        showToast(err.message, "error");
     }
+
+    document.querySelectorAll("#adminUsersTab .btn-toggle-status").forEach((btn) => {
+        btn.addEventListener("click", () =>
+            toggleUserActive(Number(btn.dataset.id), btn.dataset.active === "true")
+        );
+    });
+    document.querySelectorAll("#adminUsersTab .btn-reassign-pat").forEach((btn) => {
+        btn.addEventListener("click", () =>
+            openReassignModal(Number(btn.dataset.id), btn.dataset.name, Number(btn.dataset.doc))
+        );
+    });
 }
 
 async function toggleUserActive(userId, isActive) {
@@ -164,7 +301,7 @@ async function toggleUserActive(userId, isActive) {
             getLang() === "ar" ? "تم تحديث حالة الحساب" : "Account status updated",
             "success"
         );
-        await fetchAdminUsers();
+        await Promise.all([fetchAdminUsers(), fetchAdminStats()]);
     } catch (err) {
         showToast(err.message, "error");
     }
@@ -282,23 +419,35 @@ export async function submitReassign(event) {
     }
 }
 
+function _auditBadgeClass(action) {
+    if (!action) return "badge-muted";
+    if (action.includes("FAIL")) return "badge-danger";
+    if (action === "LOGIN_OK" || action === "USER_CREATE") return "badge-success";
+    if (action === "USER_STATUS_CHANGE" || action === "PATIENT_REASSIGN") return "badge-warn";
+    return "badge-info";
+}
+
 export async function fetchAuditLogs() {
     try {
-        const logs = await apiFetch("/api/admin/audit-logs?limit=100");
+        const action = document.getElementById("adminAuditActionFilter")?.value || "";
+        const params = new URLSearchParams({ limit: "100" });
+        if (action) params.set("action", action);
+
+        const logs = await apiFetch(`/api/admin/audit-logs?${params.toString()}`);
         const tbody = document.getElementById("adminAuditTableBody");
         tbody.innerHTML = logs.length
             ? logs
                   .map(
                       (l) => `<tr>
-                <td>${escapeHtml(formatDateTime(l.created_at))}</td>
-                <td><span class="badge badge-info">${escapeHtml(l.action)}</span></td>
-                <td>${escapeHtml(l.actor_username || "--")}</td>
+                <td class="user-meta-sub">${escapeHtml(formatDateTime(l.created_at))}</td>
+                <td><span class="badge ${_auditBadgeClass(l.action)}">${escapeHtml(l.action)}</span></td>
+                <td><strong>${escapeHtml(l.actor_username || "--")}</strong></td>
                 <td>${escapeHtml(l.target_type || "")} ${escapeHtml(l.target_id || "")}</td>
-                <td>${escapeHtml(l.ip_address || "--")}</td>
+                <td class="user-meta-sub">${escapeHtml(l.ip_address || "--")}</td>
             </tr>`
                   )
                   .join("")
-            : `<tr><td colspan="5" style="text-align:center; color:var(--white-muted);">${escapeHtml(
+            : `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--white-muted);">${escapeHtml(
                   t("noData")
               )}</td></tr>`;
     } catch (err) {

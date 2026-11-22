@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -10,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <script type="module" src="/api/static/js/main.js"></script>
 </head>
+
 <body class="dark-theme">
     <div class="film-grain"></div>
     <div class="ambient-bg"></div>
@@ -20,8 +22,11 @@
         <div class="welcome-content-box">
             <img src="/api/static/logo.png" alt="SCAI Core" class="welcome-logo" id="splashLogo">
             <h1 style="margin:0 0 6px;">Safwa Cardio-AI</h1>
-            <p class="mono" style="margin:0; font-size:11px; color:var(--scai-accent); letter-spacing:0.2em;">SYSTEM INITIALIZING</p>
-            <div class="welcome-loader-bar"><div class="welcome-loader-fill"></div></div>
+            <p class="mono" style="margin:0; font-size:11px; color:var(--scai-accent); letter-spacing:0.2em;">SYSTEM
+                INITIALIZING</p>
+            <div class="welcome-loader-bar">
+                <div class="welcome-loader-fill"></div>
+            </div>
         </div>
     </div>
 
@@ -39,24 +44,30 @@
                     <h2 style="font-size:clamp(30px, 4.5vw, 46px); margin:0 0 14px; line-height:1.15;">
                         Safwa Cardio-AI<br><span style="color:var(--scai-accent);">Clinical Unit</span>
                     </h2>
-                    <p style="font-size:14px; color:var(--white-muted); line-height:1.6; max-width:400px;" data-i18n="loginSubtitle">
+                    <p style="font-size:14px; color:var(--white-muted); line-height:1.6; max-width:400px;"
+                        data-i18n="loginSubtitle">
                         بوابة التحليل القلبي السريري المعتمدة
                     </p>
                 </div>
 
                 <div class="auth-form-side">
                     <form id="loginForm">
-                        <div class="editorial-title" style="font-size:26px; margin-bottom:22px;" data-i18n="portal">تسجيل الدخول</div>
+                        <div class="editorial-title" style="font-size:26px; margin-bottom:22px;" data-i18n="portal">
+                            تسجيل الدخول</div>
                         <div class="input-group" style="margin-bottom:18px;">
                             <label for="username" data-i18n="lblUsername">اسم المستخدم</label>
-                            <input type="text" id="username" class="form-control" autocomplete="username" required data-i18n-placeholder="txtUserPlaceholder" placeholder="أدخل اسم المستخدم">
+                            <input type="text" id="username" class="form-control" autocomplete="username" required
+                                data-i18n-placeholder="txtUserPlaceholder" placeholder="أدخل اسم المستخدم">
                         </div>
                         <div class="input-group" style="margin-bottom:22px;">
                             <label for="password" data-i18n="lblPassword">كلمة المرور</label>
-                            <input type="password" id="password" class="form-control" autocomplete="current-password" required data-i18n-placeholder="txtPassPlaceholder" placeholder="أدخل كلمة المرور">
+                            <input type="password" id="password" class="form-control" autocomplete="current-password"
+                                required data-i18n-placeholder="txtPassPlaceholder" placeholder="أدخل كلمة المرور">
                         </div>
-                        <button type="submit" class="btn btn-filled" style="width:100%; height:46px; font-size:15px;" data-i18n="btnAuth">تسجيل الدخول</button>
-                        <p style="margin-top:18px; font-size:12px; color:var(--white-muted); text-align:center;" data-i18n="loginNotice">
+                        <button type="submit" class="btn btn-filled" style="width:100%; height:46px; font-size:15px;"
+                            data-i18n="btnAuth">تسجيل الدخول</button>
+                        <p style="margin-top:18px; font-size:12px; color:var(--white-muted); text-align:center;"
+                            data-i18n="loginNotice">
                             الحسابات تُنشأ حصراً عبر الإدارة أو الطبيب المختص.
                         </p>
                     </form>
@@ -95,10 +106,12 @@
                 </div>
                 <div class="metric-card" style="border-color:var(--medical-red);">
                     <h4 style="color:var(--medical-red);" data-i18n="lblLogoutSettingsTitle">إدارة الجلسة</h4>
-                    <p style="font-size:13px; color:var(--white-muted); font-weight:500; margin-top:8px;" data-i18n="lblLogoutSettingsDesc">
+                    <p style="font-size:13px; color:var(--white-muted); font-weight:500; margin-top:8px;"
+                        data-i18n="lblLogoutSettingsDesc">
                         إنهاء الجلسة الآمنة وتسجيل الخروج من الحساب الحالي.
                     </p>
-                    <button class="btn btn-danger btn-logout-action" style="margin-top:14px;" data-i18n="btnLogout">تسجيل الخروج</button>
+                    <button class="btn btn-danger btn-logout-action" style="margin-top:14px;"
+                        data-i18n="btnLogout">تسجيل الخروج</button>
                 </div>
             </div>
         </div>
@@ -113,23 +126,31 @@
                             <h1>Safwa Cardio-AI Unit</h1>
                             <span class="specialty-badge" data-i18n="specialtyCardio">قسم أمراض القلب</span>
                         </div>
-                        <p><span id="patSummaryName">--</span> • <span data-i18n="lblAssignedDoctor">الطبيب المتابع</span>: <span id="patSummaryDoctor">--</span> (<span id="patSummaryAgeGender">--</span>)</p>
+                        <p><span id="patSummaryName">--</span> • <span data-i18n="lblAssignedDoctor">الطبيب
+                                المتابع</span>: <span id="patSummaryDoctor">--</span> (<span
+                                id="patSummaryAgeGender">--</span>)</p>
                     </div>
                 </div>
                 <div class="controls-area">
                     <span id="statusLabel" class="status-badge">الحالة: غير متصل</span>
-                    <button id="diagnoseBtn" class="btn btn-filled" style="display:none;" data-i18n="btnInference">إجراء التشخيص الذكي</button>
-                    <button id="btnSendToDoctor" class="btn btn-filled" style="display:none;" data-i18n="btnSendToDoctor">إرسال للطبيب</button>
-                    <button id="resetBtn" class="btn btn-secondary" style="display:none;" data-i18n="btnNewAcq">فحص جديد</button>
+                    <button id="diagnoseBtn" class="btn btn-filled" style="display:none;" data-i18n="btnInference">إجراء
+                        التشخيص الذكي</button>
+                    <button id="btnSendToDoctor" class="btn btn-filled" style="display:none;"
+                        data-i18n="btnSendToDoctor">إرسال للطبيب</button>
+                    <button id="resetBtn" class="btn btn-secondary" style="display:none;" data-i18n="btnNewAcq">فحص
+                        جديد</button>
                     <button id="connectBtn" class="btn btn-filled" data-i18n="btnConnect">اتصال بالعتاد</button>
-                    <button id="disconnectBtn" class="btn btn-danger" style="display:none;" data-i18n="btnDisconnect">قطع الاتصال</button>
+                    <button id="disconnectBtn" class="btn btn-danger" style="display:none;"
+                        data-i18n="btnDisconnect">قطع الاتصال</button>
                     <button class="gear-btn btn-open-settings" aria-label="Settings">⚙</button>
                 </div>
             </header>
 
             <div class="tab-bar">
-                <button class="tab-btn active" data-tab="patientMonitorTab" data-i18n="tabPatientMonitor">مراقبة ECG</button>
-                <button class="tab-btn" data-tab="patientProfileTab" data-i18n="tabPatientProfile">ملفي الطبي والسجل</button>
+                <button class="tab-btn active" data-tab="patientMonitorTab" data-i18n="tabPatientMonitor">مراقبة
+                    ECG</button>
+                <button class="tab-btn" data-tab="patientProfileTab" data-i18n="tabPatientProfile">ملفي الطبي
+                    والسجل</button>
             </div>
 
             <!-- Tab 1: Live ECG Monitor -->
@@ -140,12 +161,14 @@
                     <div id="diagMessageText" class="diag-subtext"></div>
                 </div>
 
-                <div class="hardware-module" id="patientResultComfortCard" style="display:none; border-inline-start:4px solid var(--scai-accent);">
+                <div class="hardware-module" id="patientResultComfortCard"
+                    style="display:none; border-inline-start:4px solid var(--scai-accent);">
                     <div style="display:flex; gap:14px; align-items:flex-start;">
                         <div id="comfortCardIcon" style="font-size:24px;">💡</div>
                         <div>
                             <h3 id="comfortCardTitle" style="margin:0 0 6px; font-size:17px;">--</h3>
-                            <p id="comfortCardDescription" style="margin:0; font-size:13px; color:var(--white-muted); line-height:1.6;"></p>
+                            <p id="comfortCardDescription"
+                                style="margin:0; font-size:13px; color:var(--white-muted); line-height:1.6;"></p>
                         </div>
                     </div>
                 </div>
@@ -153,13 +176,18 @@
                 <!-- Escalation symptoms ONLY (chronic conditions come from doctor-managed profile) -->
                 <div class="hardware-module" id="pnlComplaint" style="display:none;">
                     <div class="module-header">
-                        <span class="module-title" data-i18n="lblCurrentSymptoms">الأعراض الحالية (تُرفق مع الحالة للطبيب):</span>
+                        <span class="module-title" data-i18n="lblCurrentSymptoms">الأعراض الحالية (تُرفق مع الحالة
+                            للطبيب):</span>
                     </div>
                     <div class="hardware-grid">
-                        <label class="chk-label"><input type="checkbox" id="sym_palp" class="custom-chk"> خفقان / تسارع في النبض</label>
-                        <label class="chk-label"><input type="checkbox" id="sym_sob" class="custom-chk"> ضيق في التنفس</label>
-                        <label class="chk-label"><input type="checkbox" id="sym_diz" class="custom-chk"> دوار أو إرهاق</label>
-                        <label class="chk-label"><input type="checkbox" id="sym_chest" class="custom-chk"> ألم في الصدر</label>
+                        <label class="chk-label"><input type="checkbox" id="sym_palp" class="custom-chk"> خفقان / تسارع
+                            في النبض</label>
+                        <label class="chk-label"><input type="checkbox" id="sym_sob" class="custom-chk"> ضيق في
+                            التنفس</label>
+                        <label class="chk-label"><input type="checkbox" id="sym_diz" class="custom-chk"> دوار أو
+                            إرهاق</label>
+                        <label class="chk-label"><input type="checkbox" id="sym_chest" class="custom-chk"> ألم في
+                            الصدر</label>
                     </div>
                 </div>
 
@@ -170,7 +198,8 @@
                     </div>
                     <div class="metric-card">
                         <h4 data-i18n="lblStatusMetric">الحالة الفسيولوجية</h4>
-                        <p id="metric_rate_status" style="font-size:22px; color:var(--scai-accent);" data-i18n="awaitingSignal">في انتظار الإشارة</p>
+                        <p id="metric_rate_status" style="font-size:22px; color:var(--scai-accent);"
+                            data-i18n="awaitingSignal">في انتظار الإشارة</p>
                     </div>
                 </div>
 
@@ -181,7 +210,8 @@
                 <div class="progress-container" id="progressBarWrapper">
                     <div class="progress-bar" id="signalProgressBar"></div>
                 </div>
-                <div style="text-align:center; font-size:12px; color:var(--white-muted);" class="mono" id="aiDiagnosisLabel" data-i18n="coreIdle">CORE: IDLE</div>
+                <div style="text-align:center; font-size:12px; color:var(--white-muted);" class="mono"
+                    id="aiDiagnosisLabel" data-i18n="coreIdle">CORE: IDLE</div>
             </div>
 
             <!-- Tab 2: Patient Profile & History -->
@@ -191,12 +221,18 @@
                         <div class="module-header">
                             <span class="module-title" data-i18n="lblPatientProfileCard">ملفي السريري</span>
                         </div>
-                        <div class="profile-kv"><span data-i18n="lblFullName">الاسم الكامل</span><strong id="profFullName">--</strong></div>
-                        <div class="profile-kv"><span data-i18n="lblAssignedDoctor">الطبيب المتابع</span><strong id="profAssignedDoctor">--</strong></div>
-                        <div class="profile-kv"><span data-i18n="lblAge">العمر</span><strong id="profAge">--</strong></div>
-                        <div class="profile-kv"><span data-i18n="lblGender">الجنس</span><strong id="profGender">--</strong></div>
-                        <div class="profile-kv"><span data-i18n="lblChronic">الأمراض المزمنة</span><span id="profChronic">--</span></div>
-                        <div class="profile-kv"><span data-i18n="lblClinicalNotes">ملاحظات الطبيب</span><span id="profClinicalNotes">--</span></div>
+                        <div class="profile-kv"><span data-i18n="lblFullName">الاسم الكامل</span><strong
+                                id="profFullName">--</strong></div>
+                        <div class="profile-kv"><span data-i18n="lblAssignedDoctor">الطبيب المتابع</span><strong
+                                id="profAssignedDoctor">--</strong></div>
+                        <div class="profile-kv"><span data-i18n="lblAge">العمر</span><strong id="profAge">--</strong>
+                        </div>
+                        <div class="profile-kv"><span data-i18n="lblGender">الجنس</span><strong
+                                id="profGender">--</strong></div>
+                        <div class="profile-kv"><span data-i18n="lblChronic">الأمراض المزمنة</span><span
+                                id="profChronic">--</span></div>
+                        <div class="profile-kv"><span data-i18n="lblClinicalNotes">ملاحظات الطبيب</span><span
+                                id="profClinicalNotes">--</span></div>
                     </div>
 
                     <div class="hardware-module">
@@ -216,14 +252,16 @@
                                 <label for="editPatEmergencyPhone" data-i18n="lblEmergencyPhone">هاتف الطوارئ</label>
                                 <input type="text" id="editPatEmergencyPhone" class="form-control">
                             </div>
-                            <button type="submit" class="btn btn-filled" data-i18n="btnSaveContact">حفظ بيانات التواصل</button>
+                            <button type="submit" class="btn btn-filled" data-i18n="btnSaveContact">حفظ بيانات
+                                التواصل</button>
                         </form>
                     </div>
                 </div>
 
                 <div class="hardware-module">
                     <div class="module-header">
-                        <span class="module-title" data-i18n="lblDoctorMessages">📬 التوجيهات والرسائل الطبية من الطبيب</span>
+                        <span class="module-title" data-i18n="lblDoctorMessages">📬 التوجيهات والرسائل الطبية من
+                            الطبيب</span>
                     </div>
                     <div id="patientMessagesContainer"></div>
                 </div>
@@ -231,7 +269,8 @@
                 <div class="hardware-module">
                     <div class="module-header">
                         <span class="module-title" data-i18n="lblHistoryTitle">سجل الفحوصات السابقة</span>
-                        <button class="btn btn-secondary btn-sm" id="btnDownloadPDF" data-i18n="btnDownloadPDF">تحميل PDF</button>
+                        <button class="btn btn-secondary btn-sm" id="btnDownloadPDF" data-i18n="btnDownloadPDF">تحميل
+                            PDF</button>
                     </div>
                     <div id="patientHistoryContainer" style="max-height:380px; overflow-y:auto;"></div>
                 </div>
@@ -252,7 +291,8 @@
                     </div>
                 </div>
                 <div class="controls-area">
-                    <button class="btn btn-filled" id="btnOpenAddPatient" data-i18n="btnAddPatient">+ إضافة مريض</button>
+                    <button class="btn btn-filled" id="btnOpenAddPatient" data-i18n="btnAddPatient">+ إضافة
+                        مريض</button>
                     <button class="btn btn-secondary" id="btnDocRefresh" data-i18n="btnRefresh">تحديث</button>
                     <button class="btn btn-secondary btn-logout-action" data-i18n="btnLogout">تسجيل الخروج</button>
                     <button class="gear-btn btn-open-settings" aria-label="Settings">⚙</button>
@@ -287,7 +327,8 @@
             <!-- Tab 1: Prioritized Case Queue + Case Review -->
             <div id="docQueueTab" class="tab-content active">
                 <div class="filter-bar">
-                    <input type="text" id="docCaseSearch" class="form-control" data-i18n-placeholder="filterSearchCases" placeholder="بحث بالاسم أو الشكوى أو رقم الحالة...">
+                    <input type="text" id="docCaseSearch" class="form-control" data-i18n-placeholder="filterSearchCases"
+                        placeholder="بحث بالاسم أو الشكوى أو رقم الحالة...">
                     <select id="docQueueType" class="form-control">
                         <option value="active" data-i18n="filterActiveCases">الحالات النشطة</option>
                         <option value="archived" data-i18n="filterArchivedCases">الأرشيف</option>
@@ -308,7 +349,8 @@
                 <div class="doctor-workspace">
                     <!-- Left: Queue -->
                     <div id="casesContainer" class="case-list">
-                        <p style="color:var(--white-muted); padding:28px; font-size:13px; text-align:center;" data-i18n="queueClear">لا توجد حالات في القائمة</p>
+                        <p style="color:var(--white-muted); padding:28px; font-size:13px; text-align:center;"
+                            data-i18n="queueClear">لا توجد حالات في القائمة</p>
                     </div>
 
                     <!-- Center: Waveform + AI Note + Decision -->
@@ -319,7 +361,8 @@
                                 <strong id="doc_p_name">--</strong> |
                                 <span id="doc_p_age">--</span> / <span id="doc_p_gender">--</span> |
                                 <span id="doc_p_bpm" style="color:var(--medical-green);">-- BPM</span>
-                                <button class="btn btn-secondary btn-sm" id="btnResetZoom" data-i18n="btnResetZoom">إعادة ضبط التكبير</button>
+                                <button class="btn btn-secondary btn-sm" id="btnResetZoom"
+                                    data-i18n="btnResetZoom">إعادة ضبط التكبير</button>
                             </div>
                         </div>
 
@@ -328,29 +371,50 @@
                             <canvas id="doctorEcgChart" style="position:relative; z-index:1;"></canvas>
                         </div>
 
-                        <div id="docCaseLegend" class="waveform-legend" style="display:none; margin-top:-8px; margin-bottom:14px;">
-                            <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-ecg"></span><span data-i18n="legendEcg">إشارة ECG</span></span>
-                            <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-att"></span><span data-i18n="legendAttention">تركيز الذكاء الاصطناعي (AI Attention)</span></span>
+                        <div id="docCaseLegend" class="waveform-legend"
+                            style="display:none; margin-top:-8px; margin-bottom:14px;">
+                            <span class="waveform-legend-item"><span
+                                    class="waveform-swatch waveform-swatch-ecg"></span><span data-i18n="legendEcg">إشارة
+                                    ECG</span></span>
+                            <span class="waveform-legend-item"><span
+                                    class="waveform-swatch waveform-swatch-att"></span><span
+                                    data-i18n="legendAttention">تركيز الذكاء الاصطناعي (AI Attention)</span></span>
                         </div>
 
-                        <div id="docAttentionNoteSection" style="display:none; background:var(--scai-surface-elevated); padding:14px; border-radius:8px; margin-bottom:14px; border-inline-start:3px solid var(--scai-accent);">
-                            <div style="font-size:12px; font-weight:700; color:var(--scai-accent); margin-bottom:4px;" data-i18n="lblDocAttentionNote">الاستنتاج السريري الدقيق (AI Attention):</div>
+                        <div id="docAttentionNoteSection"
+                            style="display:none; background:var(--scai-surface-elevated); padding:14px; border-radius:8px; margin-bottom:14px; border-inline-start:3px solid var(--scai-accent);">
+                            <div style="font-size:12px; font-weight:700; color:var(--scai-accent); margin-bottom:4px;"
+                                data-i18n="lblDocAttentionNote">الاستنتاج السريري الدقيق (AI Attention):</div>
                             <div id="doc_attention_note" style="font-size:13px; line-height:1.6;">--</div>
                         </div>
 
                         <div class="hardware-grid" style="margin-bottom:16px; font-size:13px;">
-                            <div><span style="color:var(--white-muted);">AI:</span> <strong id="doc_p_pred">--</strong></div>
-                            <div><span style="color:var(--white-muted);" data-i18n="lblCurrentSymptoms">الأعراض:</span> <span id="doc_complaint_text">--</span></div>
-                            <div><span style="color:var(--white-muted);" data-i18n="lblChronic">الأمراض المزمنة:</span> <span id="doc_chronic_text">--</span></div>
+                            <div><span style="color:var(--white-muted);">AI:</span> <strong id="doc_p_pred">--</strong>
+                            </div>
+                            <div><span style="color:var(--white-muted);" data-i18n="lblCurrentSymptoms">الأعراض:</span>
+                                <span id="doc_complaint_text">--</span>
+                            </div>
+                            <div><span style="color:var(--white-muted);" data-i18n="lblChronic">الأمراض المزمنة:</span>
+                                <span id="doc_chronic_text">--</span>
+                            </div>
                         </div>
 
-                        <div id="docDecisionBox" style="background:var(--scai-surface-elevated); padding:18px; border-radius:10px; border:1px solid var(--scai-border);">
-                            <label for="doc_notes" style="display:block; font-size:12px; color:var(--scai-accent); font-weight:700; margin-bottom:8px;" data-i18n="lblDocNotes">ملاحظات الطبيب السريرية (اختياري)</label>
-                            <textarea id="doc_notes" class="form-control" rows="2" style="margin-bottom:14px;" data-i18n-placeholder="docNotesPlaceholder" placeholder="أضف ملاحظة وتوجيهات للمريض..." disabled></textarea>
-                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
-                                <button class="btn btn-warn" id="btnActionNoisy" disabled data-i18n="btnActionNoisy">رفض (تشويش)</button>
-                                <button class="btn btn-success" id="btnActionHealthy" disabled data-i18n="btnActionHealthy">سليم (NORMAL)</button>
-                                <button class="btn btn-danger" id="btnActionInfected" disabled data-i18n="btnActionInfected">تأكيد AFib</button>
+                        <div id="docDecisionBox"
+                            style="background:var(--scai-surface-elevated); padding:18px; border-radius:10px; border:1px solid var(--scai-border);">
+                            <label for="doc_notes"
+                                style="display:block; font-size:12px; color:var(--scai-accent); font-weight:700; margin-bottom:8px;"
+                                data-i18n="lblDocNotes">ملاحظات الطبيب السريرية (اختياري)</label>
+                            <textarea id="doc_notes" class="form-control" rows="2" style="margin-bottom:14px;"
+                                data-i18n-placeholder="docNotesPlaceholder" placeholder="أضف ملاحظة وتوجيهات للمريض..."
+                                disabled></textarea>
+                            <div
+                                style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
+                                <button class="btn btn-warn" id="btnActionNoisy" disabled data-i18n="btnActionNoisy">رفض
+                                    (تشويش)</button>
+                                <button class="btn btn-success" id="btnActionHealthy" disabled
+                                    data-i18n="btnActionHealthy">سليم (NORMAL)</button>
+                                <button class="btn btn-danger" id="btnActionInfected" disabled
+                                    data-i18n="btnActionInfected">تأكيد AFib</button>
                             </div>
                         </div>
                     </div>
@@ -360,7 +424,8 @@
                         <div class="module-header">
                             <span class="module-title" data-i18n="lblPatientSidePanel">ملف المريض</span>
                         </div>
-                        <div id="docPatientSidePanel" style="font-size:13px; color:var(--white-muted);" data-i18n="selectCasePrompt">
+                        <div id="docPatientSidePanel" style="font-size:13px; color:var(--white-muted);"
+                            data-i18n="selectCasePrompt">
                             اختر حالة من القائمة لعرض الإشارة والملف الطبي.
                         </div>
                     </div>
@@ -370,7 +435,8 @@
             <!-- Tab 2: My Patients List -->
             <div id="docPatientsTab" class="tab-content">
                 <div style="margin-bottom:14px; max-width:380px;">
-                    <input type="text" id="docPatientSearch" class="form-control" data-i18n-placeholder="searchPatientsPlaceholder" placeholder="بحث في مرضاي...">
+                    <input type="text" id="docPatientSearch" class="form-control"
+                        data-i18n-placeholder="searchPatientsPlaceholder" placeholder="بحث في مرضاي...">
                 </div>
                 <div class="table-wrap">
                     <table class="data-table">
@@ -412,40 +478,164 @@
             </header>
 
             <div class="tab-bar">
-                <button class="tab-btn active" data-tab="adminTelemetryTab" data-i18n="tabAdminTelemetry">الإحصائيات وبيانات التدريب</button>
+                <button class="tab-btn active" data-tab="adminTelemetryTab" data-i18n="tabAdminTelemetry">الإحصائيات
+                    وبيانات التدريب</button>
                 <button class="tab-btn" data-tab="adminUsersTab" data-i18n="tabAdminUsers">إدارة المستخدمين</button>
                 <button class="tab-btn" data-tab="adminAuditTab" data-i18n="tabAdminAudit">سجل التدقيق</button>
             </div>
 
             <!-- Admin Tab 1: Telemetry -->
             <div id="adminTelemetryTab" class="tab-content active">
-                <div class="metrics-grid">
-                    <div class="metric-card"><h4>TOTAL TESTS</h4><p id="stat_total">0</p></div>
-                    <div class="metric-card" style="border-color:var(--medical-green);"><h4>NORMAL</h4><p id="stat_normal" style="color:var(--medical-green);">0</p></div>
-                    <div class="metric-card" style="border-color:var(--medical-red);"><h4>AFIB</h4><p id="stat_afib" style="color:var(--medical-red);">0</p></div>
-                    <div class="metric-card"><h4>ESCALATED</h4><p id="stat_escalated">0</p></div>
-                    <div class="metric-card" style="border-color:var(--medical-yellow);"><h4>REJECTED</h4><p id="stat_rejected" style="color:var(--medical-yellow);">0</p></div>
-                    <div class="metric-card" style="border-color:var(--scai-accent);"><h4>ML DATASET</h4><p id="stat_dataset" style="color:var(--scai-accent);">0</p></div>
+                <div class="admin-kpi-grid">
+                    <div class="metric-card admin-kpi-card kpi-accent-neutral">
+                        <div class="kpi-card-top">
+                            <h4 data-i18n="kpiTotalTests">إجمالي الفحوصات</h4>
+                            <span class="kpi-dot" style="background:var(--white-muted);"></span>
+                        </div>
+                        <p id="stat_total">0</p>
+                        <div class="kpi-sub" data-i18n="kpiAllRecordings">كل التسجيلات</div>
+                    </div>
+                    <div class="metric-card admin-kpi-card kpi-accent-green">
+                        <div class="kpi-card-top">
+                            <h4 data-i18n="kpiNormalTests">طبيعي (NORMAL)</h4>
+                            <span class="kpi-dot" style="background:var(--medical-green);"></span>
+                        </div>
+                        <p id="stat_normal" style="color:var(--medical-green);">0</p>
+                        <div class="kpi-sub" id="stat_normal_pct">0%</div>
+                    </div>
+                    <div class="metric-card admin-kpi-card kpi-accent-red">
+                        <div class="kpi-card-top">
+                            <h4 data-i18n="kpiAfibTests">رجفان أذيني (AFIB)</h4>
+                            <span class="kpi-dot" style="background:var(--medical-red);"></span>
+                        </div>
+                        <p id="stat_afib" style="color:var(--medical-red);">0</p>
+                        <div class="kpi-sub" id="stat_afib_pct">0%</div>
+                    </div>
+                    <div class="metric-card admin-kpi-card kpi-accent-cyan">
+                        <div class="kpi-card-top">
+                            <h4 data-i18n="kpiEscalatedTests">محوّل للطبيب</h4>
+                            <span class="kpi-dot" style="background:var(--scai-accent);"></span>
+                        </div>
+                        <p id="stat_escalated" style="color:var(--scai-accent);">0</p>
+                        <div class="kpi-sub" id="stat_escalated_pct">0%</div>
+                    </div>
+                    <div class="metric-card admin-kpi-card kpi-accent-yellow">
+                        <div class="kpi-card-top">
+                            <h4 data-i18n="kpiRejectedTests">مرفوض (تشويش)</h4>
+                            <span class="kpi-dot" style="background:var(--medical-yellow);"></span>
+                        </div>
+                        <p id="stat_rejected" style="color:var(--medical-yellow);">0</p>
+                        <div class="kpi-sub" id="stat_rejected_pct">0%</div>
+                    </div>
+                    <div class="metric-card admin-kpi-card kpi-accent-cyan">
+                        <div class="kpi-card-top">
+                            <h4 data-i18n="kpiMlDataset">بيانات التدريب (ML)</h4>
+                            <span class="kpi-dot" style="background:var(--scai-accent);"></span>
+                        </div>
+                        <p id="stat_dataset" style="color:var(--scai-accent);">0</p>
+                        <div class="kpi-sub" data-i18n="kpiVerifiedSamples">عينات موثّقة</div>
+                    </div>
                 </div>
-                <div class="hardware-module" style="max-width:720px; margin-inline:auto;">
-                    <div class="module-header"><span class="module-title">AI INFERENCE DISTRIBUTION</span></div>
-                    <div style="height:280px;"><canvas id="adminStatsChart"></canvas></div>
+
+                <div class="admin-telemetry-grid">
+                    <!-- Primary Analytics Card: Doughnut + Breakdown Bars -->
+                    <div class="hardware-module admin-analytics-card" style="margin-bottom:0;">
+                        <div class="module-header">
+                            <div>
+                                <span class="module-title" data-i18n="lblInferenceDist">توزيع نتائج الذكاء الاصطناعي</span>
+                                <div class="module-subtitle" data-i18n="lblInferenceDistSub">ملخص شامل لجميع الفحوصات السريرية المسجلة</div>
+                            </div>
+                        </div>
+                        <div class="admin-donut-layout">
+                            <div class="admin-donut-wrap">
+                                <canvas id="adminStatsChart"></canvas>
+                                <div class="admin-donut-center">
+                                    <span id="adminChartCenterTotal" class="admin-donut-total">0</span>
+                                    <span class="admin-donut-label" data-i18n="kpiTotalTests">إجمالي الفحوصات</span>
+                                </div>
+                            </div>
+                            <div id="adminDistributionBreakdown" class="admin-breakdown-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Column: Platform Ops + Active Learning Export -->
+                    <div class="admin-side-stack">
+                        <div class="hardware-module" style="margin-bottom:0;">
+                            <div class="module-header">
+                                <span class="module-title" data-i18n="lblPlatformOps">نظرة عامة على المنصة</span>
+                            </div>
+                            <div class="admin-ops-grid">
+                                <div class="admin-ops-tile">
+                                    <span class="ops-label" data-i18n="lblActiveDoctors">الأطباء النشطون</span>
+                                    <strong id="ops_active_doctors" class="ops-value">0</strong>
+                                </div>
+                                <div class="admin-ops-tile">
+                                    <span class="ops-label" data-i18n="lblActivePatients">المرضى النشطون</span>
+                                    <strong id="ops_active_patients" class="ops-value">0</strong>
+                                </div>
+                                <div class="admin-ops-tile ops-tile-warn">
+                                    <span class="ops-label" data-i18n="lblPendingEscalations">حالات بانتظار المراجعة</span>
+                                    <strong id="ops_pending_cases" class="ops-value" style="color:var(--medical-yellow);">0</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="hardware-module admin-dataset-card" style="margin-bottom:0;">
+                            <div class="module-header" style="border-bottom-color:color-mix(in srgb, var(--scai-accent) 28%, transparent);">
+                                <span class="module-title" data-i18n="lblActiveLearning">مجموعة بيانات التعلم النشط (ML)</span>
+                                <span class="badge badge-info" id="stat_dataset_badge">0</span>
+                            </div>
+                            <p class="admin-dataset-desc" data-i18n="lblActiveLearningDesc">
+                                تسجيلات ECG مجهّلة الهوية (3000 عينة) وموثّقة بقرارات الأطباء الاستشاريين، جاهزة لإعادة تدريب النموذج.
+                            </p>
+                            <div class="admin-dataset-footer">
+                                <button class="btn btn-filled" id="btnExportDatasetCard" style="width:100%;" data-i18n="btnExportClinicalCsv">تصدير مجموعة البيانات (CSV)</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Admin Tab 2: User Management -->
             <div id="adminUsersTab" class="tab-content">
+                <div class="admin-user-summary">
+                    <div class="admin-summary-pill">
+                        <span class="summary-pill-label" data-i18n="lblActiveDoctors">الأطباء النشطون</span>
+                        <strong id="user_sum_doctors">0</strong>
+                    </div>
+                    <div class="admin-summary-pill">
+                        <span class="summary-pill-label" data-i18n="lblActivePatients">المرضى النشطون</span>
+                        <strong id="user_sum_patients">0</strong>
+                    </div>
+                    <div class="admin-summary-pill">
+                        <span class="summary-pill-label" data-i18n="lblInactiveAccounts">الحسابات المعطلة</span>
+                        <strong id="user_sum_inactive" style="color:var(--white-muted);">0</strong>
+                    </div>
+                </div>
+
+                <div class="admin-toolbar">
+                    <input type="text" id="adminUserSearch" class="form-control" data-i18n-placeholder="searchUsersPlaceholder" placeholder="بحث بالاسم أو اسم المستخدم...">
+                    <select id="adminUserStatusFilter" class="form-control">
+                        <option value="all" data-i18n="filterAllStatuses">كل الحالات</option>
+                        <option value="active" data-i18n="activeBadge">نشط</option>
+                        <option value="inactive" data-i18n="inactiveBadge">معطل</option>
+                    </select>
+                </div>
+
                 <div class="hardware-module">
                     <div class="module-header">
-                        <span class="module-title" data-i18n="lblDoctorsTable">الأطباء</span>
-                        <button class="btn btn-filled btn-sm" id="btnOpenAddDoctor" data-i18n="btnAddDoctor">+ إضافة طبيب</button>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="module-title" data-i18n="lblDoctorsTable">الأطباء</span>
+                            <span class="count-pill" id="adminDoctorsCount">0</span>
+                        </div>
+                        <button class="btn btn-filled btn-sm" id="btnOpenAddDoctor" data-i18n="btnAddDoctor">+ إضافة
+                            طبيب</button>
                     </div>
                     <div class="table-wrap">
                         <table class="data-table">
                             <thead>
                                 <tr>
                                     <th data-i18n="lblFullName">الاسم الكامل</th>
-                                    <th data-i18n="colUsername">اسم المستخدم</th>
                                     <th data-i18n="colPatientsCount">عدد المرضى</th>
                                     <th data-i18n="colStatus">الحالة</th>
                                     <th data-i18n="colActions">إجراءات</th>
@@ -458,8 +648,12 @@
 
                 <div class="hardware-module">
                     <div class="module-header">
-                        <span class="module-title" data-i18n="lblPatientsTable">المرضى</span>
-                        <button class="btn btn-filled btn-sm" id="btnOpenAdminAddPatient" data-i18n="btnAddPatient">+ إضافة مريض</button>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="module-title" data-i18n="lblPatientsTable">المرضى</span>
+                            <span class="count-pill" id="adminPatientsCount">0</span>
+                        </div>
+                        <button class="btn btn-filled btn-sm" id="btnOpenAdminAddPatient" data-i18n="btnAddPatient">+
+                            إضافة مريض</button>
                     </div>
                     <div class="table-wrap">
                         <table class="data-table">
@@ -480,19 +674,34 @@
 
             <!-- Admin Tab 3: Audit Log -->
             <div id="adminAuditTab" class="tab-content">
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Action</th>
-                                <th>Actor</th>
-                                <th>Target</th>
-                                <th>IP</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminAuditTableBody"></tbody>
-                    </table>
+                <div class="hardware-module">
+                    <div class="module-header">
+                        <span class="module-title" data-i18n="tabAdminAudit">سجل التدقيق</span>
+                        <select id="adminAuditActionFilter" class="form-control" style="max-width:240px;">
+                            <option value="" data-i18n="filterAllActions">كل الإجراءات</option>
+                            <option value="LOGIN_OK">LOGIN_OK</option>
+                            <option value="LOGIN_FAIL">LOGIN_FAIL</option>
+                            <option value="USER_CREATE">USER_CREATE</option>
+                            <option value="USER_STATUS_CHANGE">USER_STATUS_CHANGE</option>
+                            <option value="PATIENT_REASSIGN">PATIENT_REASSIGN</option>
+                            <option value="CASE_REVIEW">CASE_REVIEW</option>
+                            <option value="DATASET_EXPORT">DATASET_EXPORT</option>
+                        </select>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th data-i18n="colAuditTime">الوقت</th>
+                                    <th data-i18n="colAuditAction">الإجراء</th>
+                                    <th data-i18n="colAuditActor">المستخدم</th>
+                                    <th data-i18n="colAuditTarget">الهدف</th>
+                                    <th data-i18n="colAuditIp">عنوان IP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminAuditTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -523,7 +732,8 @@
                     <input type="password" id="chgConfirmPw" class="form-control" minlength="10" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary btn-logout-action" data-i18n="btnLogout">تسجيل الخروج</button>
+                    <button type="button" class="btn btn-secondary btn-logout-action" data-i18n="btnLogout">تسجيل
+                        الخروج</button>
                     <button type="submit" class="btn btn-filled" data-i18n="btnSavePassword">تحديث كلمة المرور</button>
                 </div>
             </form>
@@ -541,7 +751,8 @@
                 <input type="checkbox" id="consentCheck" class="custom-chk">
                 <span data-i18n="consentAgree">أوافق على ما سبق</span>
             </label>
-            <button class="btn btn-filled" id="consentAcceptBtn" disabled style="width:100%;" data-i18n="consentBtn">متابعة للبوابة</button>
+            <button class="btn btn-filled" id="consentAcceptBtn" disabled style="width:100%;"
+                data-i18n="consentBtn">متابعة للبوابة</button>
         </div>
     </div>
 
@@ -594,11 +805,16 @@
                     </div>
                 </div>
                 <div style="margin-bottom:12px;">
-                    <label style="font-size:12px; color:var(--white-muted); font-weight:700; display:block; margin-bottom:6px;" data-i18n="lblChronic">الأمراض المزمنة</label>
+                    <label
+                        style="font-size:12px; color:var(--white-muted); font-weight:700; display:block; margin-bottom:6px;"
+                        data-i18n="lblChronic">الأمراض المزمنة</label>
                     <div style="display:flex; gap:14px; flex-wrap:wrap;">
-                        <label class="chk-label"><input type="checkbox" class="custom-chk chronic-chk" value="ارتفاع ضغط الدم"> ارتفاع ضغط الدم</label>
-                        <label class="chk-label"><input type="checkbox" class="custom-chk chronic-chk" value="السكري"> السكري</label>
-                        <label class="chk-label"><input type="checkbox" class="custom-chk chronic-chk" value="أمراض قلب سابقة"> أمراض قلب سابقة</label>
+                        <label class="chk-label"><input type="checkbox" class="custom-chk chronic-chk"
+                                value="ارتفاع ضغط الدم"> ارتفاع ضغط الدم</label>
+                        <label class="chk-label"><input type="checkbox" class="custom-chk chronic-chk" value="السكري">
+                            السكري</label>
+                        <label class="chk-label"><input type="checkbox" class="custom-chk chronic-chk"
+                                value="أمراض قلب سابقة"> أمراض قلب سابقة</label>
                     </div>
                 </div>
                 <div class="input-group">
@@ -606,7 +822,8 @@
                     <textarea id="newPatNotes" class="form-control" rows="2"></textarea>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="btnCloseAddPatient" data-i18n="btnCancel">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" id="btnCloseAddPatient"
+                        data-i18n="btnCancel">إلغاء</button>
                     <button type="submit" class="btn btn-filled" data-i18n="btnSave">حفظ</button>
                 </div>
             </form>
@@ -639,11 +856,16 @@
                     </div>
                 </div>
                 <div style="margin-bottom:12px;">
-                    <label style="font-size:12px; color:var(--white-muted); font-weight:700; display:block; margin-bottom:6px;" data-i18n="lblChronic">الأمراض المزمنة</label>
+                    <label
+                        style="font-size:12px; color:var(--white-muted); font-weight:700; display:block; margin-bottom:6px;"
+                        data-i18n="lblChronic">الأمراض المزمنة</label>
                     <div style="display:flex; gap:14px; flex-wrap:wrap;">
-                        <label class="chk-label"><input type="checkbox" class="custom-chk edit-chronic-chk" value="ارتفاع ضغط الدم"> ارتفاع ضغط الدم</label>
-                        <label class="chk-label"><input type="checkbox" class="custom-chk edit-chronic-chk" value="السكري"> السكري</label>
-                        <label class="chk-label"><input type="checkbox" class="custom-chk edit-chronic-chk" value="أمراض قلب سابقة"> أمراض قلب سابقة</label>
+                        <label class="chk-label"><input type="checkbox" class="custom-chk edit-chronic-chk"
+                                value="ارتفاع ضغط الدم"> ارتفاع ضغط الدم</label>
+                        <label class="chk-label"><input type="checkbox" class="custom-chk edit-chronic-chk"
+                                value="السكري"> السكري</label>
+                        <label class="chk-label"><input type="checkbox" class="custom-chk edit-chronic-chk"
+                                value="أمراض قلب سابقة"> أمراض قلب سابقة</label>
                     </div>
                 </div>
                 <div class="input-group">
@@ -651,7 +873,8 @@
                     <textarea id="editClinNotes" class="form-control" rows="3"></textarea>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="btnCloseEditClinical" data-i18n="btnCancel">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" id="btnCloseEditClinical"
+                        data-i18n="btnCancel">إلغاء</button>
                     <button type="submit" class="btn btn-filled" data-i18n="btnSave">حفظ</button>
                 </div>
             </form>
@@ -675,20 +898,25 @@
             <div class="modal-header">
                 <h3 data-i18n="waveformModalTitle">عرض إشارة تخطيط القلب (ECG)</h3>
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                    <button class="btn btn-secondary btn-sm" id="btnResetWaveformZoom" style="display:none;" data-i18n="btnResetZoom">إعادة ضبط التكبير</button>
-                    <button class="btn btn-secondary btn-sm" id="btnCloseWaveformModal" data-i18n="btnClose">إغلاق</button>
+                    <button class="btn btn-secondary btn-sm" id="btnResetWaveformZoom" style="display:none;"
+                        data-i18n="btnResetZoom">إعادة ضبط التكبير</button>
+                    <button class="btn btn-secondary btn-sm" id="btnCloseWaveformModal"
+                        data-i18n="btnClose">إغلاق</button>
                 </div>
             </div>
             <div id="waveformModalMeta" class="waveform-meta-bar"></div>
-            <div id="waveformModalLoading" class="waveform-state-box" style="display:none;" data-i18n="waveformLoading">جاري تحميل إشارة تخطيط القلب...</div>
+            <div id="waveformModalLoading" class="waveform-state-box" style="display:none;" data-i18n="waveformLoading">
+                جاري تحميل إشارة تخطيط القلب...</div>
             <div id="waveformModalError" class="waveform-state-box waveform-state-error" style="display:none;"></div>
             <div id="waveformModalChartBox" class="doc-chart-wrapper" style="display:none; height:340px;">
                 <div class="ecg-baseline"></div>
                 <canvas id="waveformModalCanvas" style="position:relative; z-index:1;"></canvas>
             </div>
             <div id="waveformModalLegend" class="waveform-legend" style="display:none;">
-                <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-ecg"></span><span data-i18n="legendEcg">إشارة ECG</span></span>
-                <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-att"></span><span data-i18n="legendAttention">تركيز الذكاء الاصطناعي (AI Attention)</span></span>
+                <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-ecg"></span><span
+                        data-i18n="legendEcg">إشارة ECG</span></span>
+                <span class="waveform-legend-item"><span class="waveform-swatch waveform-swatch-att"></span><span
+                        data-i18n="legendAttention">تركيز الذكاء الاصطناعي (AI Attention)</span></span>
             </div>
         </div>
     </div>
@@ -713,7 +941,8 @@
                     <input type="password" id="newDocPassword" class="form-control" minlength="10" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="btnCloseAddDoctor" data-i18n="btnCancel">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" id="btnCloseAddDoctor"
+                        data-i18n="btnCancel">إلغاء</button>
                     <button type="submit" class="btn btn-filled" data-i18n="btnSave">حفظ</button>
                 </div>
             </form>
@@ -763,7 +992,8 @@
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="btnCloseAdminAddPatient" data-i18n="btnCancel">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" id="btnCloseAdminAddPatient"
+                        data-i18n="btnCancel">إلغاء</button>
                     <button type="submit" class="btn btn-filled" data-i18n="btnSave">حفظ</button>
                 </div>
             </form>
@@ -784,7 +1014,8 @@
                     <select id="reassignDoctorSelect" class="form-control" required></select>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="btnCloseReassign" data-i18n="btnCancel">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" id="btnCloseReassign"
+                        data-i18n="btnCancel">إلغاء</button>
                     <button type="submit" class="btn btn-filled" data-i18n="btnSave">حفظ</button>
                 </div>
             </form>
@@ -792,7 +1023,9 @@
     </div>
 
     <div class="humble-disclaimer-footer">
-        <p data-i18n="humbleDisclaimer">لقد بذلنا كامل طاقتنا وقدراتنا البشرية المتواضعة في بناء هذه المنصة لمساندتكم، ونعتذر بشدة عن أي تقصير غير مقصود قد يطرأ.</p>
+        <p data-i18n="humbleDisclaimer">لقد بذلنا كامل طاقتنا وقدراتنا البشرية المتواضعة في بناء هذه المنصة لمساندتكم،
+            ونعتذر بشدة عن أي تقصير غير مقصود قد يطرأ.</p>
     </div>
 </body>
+
 </html>
