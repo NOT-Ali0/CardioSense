@@ -13,6 +13,29 @@ CardioSense is a full-stack clinical ECG screening and arrhythmia (AFib) triage 
 - **Admin Console:** Real-time inference telemetry, de-identified active-learning CSV export, user management (doctors & patients), doctor deactivation guard, patient reassignment (transfers open `ESCALATED` cases), and security audit log.
 
 ---
+## How it works
+
+```
+Wearable sensor ──BLE──▶ Browser (3,000 samples @ 300 Hz)
+                              │  POST /predict
+                              ▼
+                   Smart Gatekeeper (signal integrity)
+                              │ rejected ──▶ "retake recording" + history entry
+                              ▼
+                  DSP: DC removal → 0.5–45 Hz band-pass → length guard → z-score
+                              ▼
+                  Medical_ECG_Net → logit → temperature scaling (T = 1.4723)
+                              ▼
+            confidence ≥ 95% AND entropy ≤ 0.400 ?
+              yes ──▶ instant result: NORMAL / AFIB
+              no  ──▶ UNCERTAIN → escalated to the physician queue
+                              ▼
+        Patient adds symptoms & history → background LLM writes an attention note
+                              ▼
+        Physician reviews waveform + attention → verdict (AFib / Normal / Noisy)
+                              ▼
+        Patient receives the decision; case is archived and added to the dataset
+```
 
 ## Local Development Setup
 
