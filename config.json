@@ -7,7 +7,7 @@
     "sampling_rate": 300,
     "input_length": 3000,
     "temperature": 1.4723,
-    "confidence_threshold": 1,
+    "confidence_threshold": 0.95,
     "entropy_threshold": 0.40,
     "classes": [
         "NORMAL",
