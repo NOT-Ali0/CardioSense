@@ -72,4 +72,3 @@ pytest -v
 
 ## Documentation
 - API Reference: [docs/api-contract.md](docs/api-contract.md)
-- Architecture & Security Plan: [docs/plans/auth-and-dashboard-plan.md](docs/plans/auth-and-dashboard-plan.md)
